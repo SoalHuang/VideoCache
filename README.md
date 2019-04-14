@@ -20,7 +20,7 @@ github "SoalHuang/VideoCache"
 
 
 ## Author
-
+* ***Twitter: [@SoalHuang](https://twitter.com/SoalHuang)***
 
 
 ## License
