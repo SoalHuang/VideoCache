@@ -20,7 +20,7 @@ github "SoalHuang/VideoCache"
 
 
 ## Author
-* ***Twitter: [@SoalHuang](https://twitter.com/SoalHuang)***
+* *** Twitter: [@SoalHuang](https://twitter.com/SoalHuang) ***
 
 ## Reference
 * *** [VIMediaCache](https://github.com/vitoziv/VIMediaCache) ***
