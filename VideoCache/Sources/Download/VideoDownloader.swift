@@ -131,8 +131,6 @@ class VideoDownloader: NSObject {
     
     private var isCanceled: Bool = false
     
-    private var isAllowWrite: Bool = VideoCacheManager.default.isAllowWrite
-    
     private var writeOffset: Int64 = 0
 }
 
@@ -243,7 +241,7 @@ extension VideoDownloader {
     }
     
     func write(data: Data) {
-        guard isAllowWrite else { return }
+        guard VideoCacheManager.default.allowWrite else { return }
         let range = VideoRange(writeOffset, writeOffset + Int64(data.count))
         VLog(.data, "downloader id: \(id), write data range: (\(range)) length: \(range.length)")
         do {

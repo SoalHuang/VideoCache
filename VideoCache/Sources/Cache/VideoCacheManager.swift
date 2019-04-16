@@ -9,6 +9,21 @@
 import Foundation
 import UIKit
 
+enum BoolValues {
+    
+    case `default`(Bool)
+    case auto(Bool)
+    case manual(Bool)
+    
+    var value: Bool {
+        switch self {
+        case .default(let b):   return b
+        case .auto(let b):      return b
+        case .manual(let b):    return b
+        }
+    }
+}
+
 let FileM = FileManager.default
 
 public class VideoCacheManager: NSObject {
@@ -21,8 +36,26 @@ public class VideoCacheManager: NSObject {
         didSet { createCacheDirectory() }
     }
     
+    /// default 1GB
+    public var capacityLimit: Int64 = Int64(1).GB {
+        didSet { checkAllow() }
+    }
+    
     /// default true
-    public var isAllowWrite: Bool = true
+    public var allowWrite: Bool {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return allowWrite_.value
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            allowWrite_ = .manual(newValue)
+        }
+    }
+    
+    private var allowWrite_: BoolValues = .default(true)
     
     /// default none
     public var logLevel: VideoCacheLogLevel {
@@ -30,7 +63,14 @@ public class VideoCacheManager: NSObject {
         set { videoCacheLogLevel = newValue }
     }
     
+    /// time default 2, use default 1
+    public func setWeight(time: Int, use: Int) {
+        lru.timeWeight = time
+        lru.useWeight = use
+    }
+    
     deinit {
+        NotificationCenter.default.removeObserver(self, name: VideoFileHandle.didSynchronizeNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: UIApplication.didBecomeActiveNotification, object: nil)
     }
     
@@ -39,14 +79,22 @@ public class VideoCacheManager: NSObject {
         
         createCacheDirectory()
         
-        if isAllowWrite, let availabelSize = UIDevice.diskAvailableSize {
-            VLog(.info, "Device availabelSize is \(availabelSize / Int64(1).MB) MB")
-            isAllowWrite = availabelSize > Int64(1).GB
-            VLog(.info, "Auto \(isAllowWrite ? "enabled" : "disabled") allow write")
-        }
+        checkAllow()
         
+        NotificationCenter.default.addObserver(self, selector: #selector(autoCheckUsage), name: VideoFileHandle.didSynchronizeNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActive), name: UIApplication.didBecomeActiveNotification, object: nil)
     }
+    
+    private lazy var lru: VideoLRUConfiguration = {
+        if let lruConfig = NSKeyedUnarchiver.unarchiveObject(withFile: lruFilePath) as? VideoLRUConfiguration {
+            return lruConfig
+        }
+        let lruConfig = VideoLRUConfiguration()
+        NSKeyedArchiver.archiveRootObject(lruConfig, toFile: lruFilePath)
+        return lruConfig
+    }()
+    
+    private var lastCheckTimeInterval: TimeInterval = Date().timeIntervalSince1970
     
     private var downloadingUrls_: [String: VURL] = [:]
     
@@ -55,12 +103,25 @@ public class VideoCacheManager: NSObject {
 
 extension VideoCacheManager {
     
+    private func checkAllow() {
+        if case .manual(_) = allowWrite_ { return }
+        if allowWrite, let availabelSize = UIDevice.diskAvailableSize {
+            allowWrite_ = .auto(availabelSize > capacityLimit)
+            VLog(.info, "Auto \(allowWrite ? "enabled" : "disabled") allow write")
+        }
+    }
+    
     @objc
     private func appDidBecomeActive() {
-        if isAllowWrite, let availabelSize = UIDevice.diskAvailableSize {
-            isAllowWrite = availabelSize > Int64(1).GB
-            VLog(.info, "Auto \(isAllowWrite ? "enabled" : "disabled") allow write")
-        }
+        checkAllow()
+    }
+    
+    @objc
+    private func autoCheckUsage() {
+        let now = Date().timeIntervalSince1970
+        guard now - lastCheckTimeInterval > 10 else { return }
+        lastCheckTimeInterval = now
+        checkUsage()
     }
 }
 
@@ -77,6 +138,15 @@ extension VideoCacheManager {
         }
     }
     
+    private func calculateSize() throws -> UInt64 {
+        let contents = try FileM.contentsOfDirectory(atPath: directory)
+        let calculateContent: (String) -> UInt64 = {
+            guard let attributes = try? FileM.attributesOfItem(atPath: self.directory.appending("/\($0)")) else { return 0 }
+            return (attributes as NSDictionary).fileSize()
+        }
+        return contents.reduce(0) { $0 + calculateContent($1) }
+    }
+    
     /// if cache key is nil, it will be filled by url.absoluteString's md5 string
     public func clean(remote url: URL, cacheKey key: String? = nil) throws {
         let `key` = key ?? url.absoluteString.CMD5
@@ -87,10 +157,12 @@ extension VideoCacheManager {
         }
         try FileM.removeItem(atPath: configurationPath(for: url))
         try FileM.removeItem(atPath: videoPath(for: url))
+        lru.delete(url: url)
     }
     
     /// clean all cache
     public func cleanAll() throws {
+        lru.deleteAll(without: downloadingUrls)
         var downloadingMD5: [String: VURL] = [:]
         downloadingUrls.forEach {
             downloadingMD5[$0.value.cacheFileName] = $0.value
@@ -104,6 +176,14 @@ extension VideoCacheManager {
 }
 
 extension VideoCacheManager {
+    
+    func use(url: VURL) {
+        lru.use(url: url)
+    }
+    
+    var lruFilePath: String {
+        return directory.appending("/\(lruFileName).\(VideoCacheConfigFileExt)")
+    }
     
     func videoPath(for url: VURL) -> String {
         return directory.appending("/\(url.cacheFileName)")
@@ -123,6 +203,15 @@ extension VideoCacheManager {
         }
         newConfig.synchronize()
         return newConfig
+    }
+    
+    func checkUsage() {
+        while let size = try? calculateSize(), size > capacityLimit {
+            VLog(.info, "cache total size: \(size)")
+            if let oldestUrl = lru.oldestURL(without: downloadingUrls) {
+                try? clean(remote: oldestUrl.url, cacheKey: oldestUrl.cacheKey)
+            }
+        }
     }
 }
 

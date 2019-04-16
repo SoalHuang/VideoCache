@@ -27,6 +27,7 @@
 		9C0842A62226324200EB8F85 /* VURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0842942226324200EB8F85 /* VURL.swift */; };
 		9C0842A72226324200EB8F85 /* Action.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0842952226324200EB8F85 /* Action.swift */; };
 		9C0842AB222633DA00EB8F85 /* VLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0842AA222633DA00EB8F85 /* VLog.swift */; };
+		9C6EFBE42265B825003DE259 /* VideoLRUConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C6EFBE32265B825003DE259 /* VideoLRUConfiguration.swift */; };
 		9C75008C223B88F70024D1E8 /* CodingRange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C75008B223B88F70024D1E8 /* CodingRange.swift */; };
 		9CB878CD2226791900543226 /* UIDevice+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CB878CC2226791900543226 /* UIDevice+Ext.swift */; };
 		9CD29EFF223A43EE009F70EB /* Int64+FileSize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CD29EFE223A43EE009F70EB /* Int64+FileSize.swift */; };
@@ -55,6 +56,7 @@
 		9C0842942226324200EB8F85 /* VURL.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VURL.swift; sourceTree = "<group>"; };
 		9C0842952226324200EB8F85 /* Action.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Action.swift; sourceTree = "<group>"; };
 		9C0842AA222633DA00EB8F85 /* VLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VLog.swift; sourceTree = "<group>"; };
+		9C6EFBE32265B825003DE259 /* VideoLRUConfiguration.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoLRUConfiguration.swift; sourceTree = "<group>"; };
 		9C75008B223B88F70024D1E8 /* CodingRange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodingRange.swift; sourceTree = "<group>"; };
 		9CB878CC2226791900543226 /* UIDevice+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIDevice+Ext.swift"; sourceTree = "<group>"; };
 		9CD29EFE223A43EE009F70EB /* Int64+FileSize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Int64+FileSize.swift"; sourceTree = "<group>"; };
@@ -133,6 +135,7 @@
 				9C08428B2226324200EB8F85 /* VideoCacheManager.swift */,
 				9C08428D2226324200EB8F85 /* VideoConfiguration.swift */,
 				9C08428C2226324200EB8F85 /* VideoFileHandle.swift */,
+				9C6EFBE32265B825003DE259 /* VideoLRUConfiguration.swift */,
 			);
 			path = Cache;
 			sourceTree = "<group>";
@@ -253,6 +256,7 @@
 				9C0842982226324200EB8F85 /* Error+Ext.swift in Sources */,
 				9CB878CD2226791900543226 /* UIDevice+Ext.swift in Sources */,
 				9C0842A02226324200EB8F85 /* VideoFileHandle.swift in Sources */,
+				9C6EFBE42265B825003DE259 /* VideoLRUConfiguration.swift in Sources */,
 				9C0842A62226324200EB8F85 /* VURL.swift in Sources */,
 				9C0842972226324200EB8F85 /* URLResponse+Ext.swift in Sources */,
 				9C0842A12226324200EB8F85 /* VideoConfiguration.swift in Sources */,
