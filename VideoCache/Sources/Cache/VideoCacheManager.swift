@@ -21,9 +21,6 @@ public class VideoCacheManager: NSObject {
         didSet { createCacheDirectory() }
     }
     
-    /// default 1GB
-    public var capacityLimit: Int64 = Int64(1).GB
-    
     /// default true
     public var isAllowWrite: Bool = true
     
