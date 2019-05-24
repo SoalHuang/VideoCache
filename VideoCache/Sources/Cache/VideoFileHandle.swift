@@ -7,7 +7,6 @@
 //
 
 import Foundation
-
 import UIKit
 
 private let PacketLimit: Int64 = Int64(1).MB

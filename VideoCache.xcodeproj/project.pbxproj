@@ -212,6 +212,7 @@
 				TargetAttributes = {
 					9C08420A222530D700EB8F85 = {
 						CreatedOnToolsVersion = 10.1;
+						LastSwiftMigration = 1020;
 					};
 				};
 			};
@@ -221,6 +222,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				Base,
 			);
 			mainGroup = 9C084201222530D700EB8F85;
 			productRefGroup = 9C08420C222530D700EB8F85 /* Products */;
@@ -417,7 +419,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.putao.VideoCache;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -441,7 +443,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.putao.VideoCache;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
