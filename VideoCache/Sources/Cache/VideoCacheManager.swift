@@ -105,7 +105,7 @@ extension VideoCacheManager {
     
     private func checkAllow() {
         if case .manual(_) = allowWrite_ { return }
-        if allowWrite, let availabelSize = UIDevice.diskAvailableSize {
+        if allowWrite, let availabelSize = UIDevice.availableCapacity {
             allowWrite_ = .auto(availabelSize > capacityLimit)
             VLog(.info, "Auto \(allowWrite ? "enabled" : "disabled") allow write")
         }
