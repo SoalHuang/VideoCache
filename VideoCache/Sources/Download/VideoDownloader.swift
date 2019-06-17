@@ -106,6 +106,7 @@ class VideoDownloader: NSObject {
         NSObject.cancelPreviousPerformRequests(withTarget: self)
         session?.invalidateAndCancel()
         dataDelegate?.delegate = nil
+        session = nil
         isCanceled = true
         delegate = nil
     }
@@ -207,6 +208,9 @@ extension VideoDownloader {
 extension VideoDownloader {
     
     func read(from range: VideoRange) {
+        
+        if isCanceled { return }
+        
         VLog(.data, "downloader id: \(id), read data range: (\(range)) length: \(range.length)")
         do {
             let data = try fileHandle.readData(for: range)
@@ -218,6 +222,8 @@ extension VideoDownloader {
     }
     
     func download(for range: VideoRange) {
+        
+        if isCanceled { return }
         
         VLog(.info, "downloader id: \(id), download range: (\(range)) length: \(range.length)")
         guard let originUrl = loadingRequest.request.url?.originUrl else {

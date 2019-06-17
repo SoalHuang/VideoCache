@@ -49,7 +49,6 @@ extension VideoLoader: VideoDownloaderDelegate {
     func downloader(_ downloader: VideoDownloader, finishWith error: Error?) {
         VLog(.error, "loader download failure: \(String(describing: error))")
         cancel()
-//        downLoaders.removeAll { $0.loadingRequest == downloader.loadingRequest }
     }
 }
 
