@@ -76,14 +76,25 @@ extension VideoDownloader: VideoDownloaderType {
         if fileHandle.configuration.contentInfo.totalLength > 0 {
             fileHandle.configuration.synchronize()
         }
+        //        else if dataRequest.requestsAllDataToEndOfResource {
+        //            toEnd = true
+        //        }
         
-        let offset = Int64(dataRequest.requestedOffset)
-        let length = Int64(dataRequest.requestedLength)
-        let range = VideoRange(offset, offset + length)
-        VLog(.info, "downloader id: \(id), wants: \(range)")
-        actions = fileHandle.actions(for: range)
-        VLog(.request, "downloader id: \(id), actions: \(actions)")
-        
+        if toEnd {
+            let offset: Int64 = 0
+            let length: Int64 = 2
+            let range = VideoRange(offset, length)
+            VLog(.info, "downloader id: \(id), wants: \(offset) to end")
+            actions = fileHandle.actions(for: range)
+            VLog(.request, "downloader id: \(id), actions: \(actions)")
+        } else {
+            let offset = Int64(dataRequest.requestedOffset)
+            let length = Int64(dataRequest.requestedLength)
+            let range = VideoRange(offset, offset + length)
+            VLog(.info, "downloader id: \(id), wants: \(range)")
+            actions = fileHandle.actions(for: range)
+            VLog(.request, "downloader id: \(id), actions: \(actions)")
+        }
         actionLoop()
     }
 }
@@ -106,7 +117,6 @@ class VideoDownloader: NSObject {
         NSObject.cancelPreviousPerformRequests(withTarget: self)
         session?.invalidateAndCancel()
         dataDelegate?.delegate = nil
-        session = nil
         isCanceled = true
         delegate = nil
     }
@@ -129,6 +139,8 @@ class VideoDownloader: NSObject {
     private var session: URLSession?
     
     private var task: URLSessionDataTask?
+    
+    private var toEnd: Bool = false
     
     private var isCanceled: Bool = false
     
@@ -200,7 +212,13 @@ extension VideoDownloader {
     }
     
     func finishLoading() {
+        if toEnd {
+            toEnd.toggle()
+            actions = fileHandle.actions(for: VideoRange(0, fileHandle.contentInfo.totalLength))
+        }
+        
         fileHandle.synchronize(notify: true)
+        
         actionLoop()
     }
 }
@@ -208,9 +226,6 @@ extension VideoDownloader {
 extension VideoDownloader {
     
     func read(from range: VideoRange) {
-        
-        if isCanceled { return }
-        
         VLog(.data, "downloader id: \(id), read data range: (\(range)) length: \(range.length)")
         do {
             let data = try fileHandle.readData(for: range)
@@ -222,8 +237,6 @@ extension VideoDownloader {
     }
     
     func download(for range: VideoRange) {
-        
-        if isCanceled { return }
         
         VLog(.info, "downloader id: \(id), download range: (\(range)) length: \(range.length)")
         guard let originUrl = loadingRequest.request.url?.originUrl else {
@@ -278,7 +291,7 @@ private class DownloaderSessionDelegate: NSObject, DownloaderSessionDelegateType
     
     weak var delegate: DownloaderSessionDelegateDelegate?
     
-    private var bufferData = Data()
+    private var bufferData = NSMutableData()
     private let lock = NSLock()
     
     deinit {
@@ -310,34 +323,48 @@ private class DownloaderSessionDelegate: NSObject, DownloaderSessionDelegateType
     }
     
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        
         VLog(.request, "task: \(dataTask) did receive data: \(data.count)")
+        
         lock.lock()
         defer { lock.unlock() }
         
         bufferData.append(data)
         
-        let dataCount = bufferData.count
-        guard dataCount >= DownloadBufferLimit else { return }
+        let bufferCount = bufferData.count
+        guard bufferCount > DownloadBufferLimit else { return }
         
-        let start = bufferData.startIndex
-        let chunkRange = Range(start, start.advanced(by: DownloadBufferLimit))
-        let chunkData = bufferData.subdata(in: chunkRange)
-        bufferData.removeSubrange(chunkRange)
+        let chunkRange = NSRange(location: bufferData.startIndex, length: DownloadBufferLimit)
+        
+        VLog(.info, "task: buffer data count: \(bufferCount), subdata: \(chunkRange)")
+        
+        let chunkData = bufferData.subdata(with: chunkRange)
+        
+        VLog(.info, "task: buffer data remove subrange: \(chunkRange)")
+        
+        bufferData.replaceBytes(in: chunkRange, withBytes: nil, length: 0)
+        
         delegate?.downloaderSession(self, didReceive: chunkData)
     }
     
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        
         VLog(.request, "task: \(task) did complete with error: \(String(describing: error))")
+        
         lock.lock()
-        let dataCount = bufferData.count
-        if error == nil, dataCount > 0 {
-            let start = bufferData.startIndex
-            let chunkRange = Range(start, start.advanced(by: dataCount))
-            let chunkData = bufferData.subdata(in: chunkRange)
-            bufferData.removeSubrange(chunkRange)
+        defer { lock.unlock() }
+        
+        let bufferCount = bufferData.count
+        
+        if error == nil, bufferCount > 0 {
+            
+            let chunkRange = NSRange(location: bufferData.startIndex, length: bufferCount)
+            let chunkData = bufferData.subdata(with: chunkRange)
+            
+            bufferData.replaceBytes(in: chunkRange, withBytes: nil, length: 0)
+            
             delegate?.downloaderSession(self, didReceive: chunkData)
         }
-        lock.unlock()
         
         delegate?.downloaderSession(self, didCompleteWithError: error)
     }
