@@ -206,7 +206,11 @@ extension VideoDownloader {
     
     func finishLoading(error: Error?) {
         VLog(.error, "finish loading error: \(String(describing: error))")
-        fileHandle.synchronize(notify: true)
+        do {
+            try fileHandle.synchronize(notify: true)
+        } catch {
+            VLog(.error, "finish loading error, fileHandle synchronize failure: \(error)")
+        }
         loadingRequest.finishLoading(with: error)
         delegate?.downloader(self, finishWith: error)
     }
@@ -217,7 +221,11 @@ extension VideoDownloader {
             actions = fileHandle.actions(for: VideoRange(0, fileHandle.contentInfo.totalLength))
         }
         
-        fileHandle.synchronize(notify: true)
+        do {
+            try fileHandle.synchronize(notify: true)
+        } catch {
+            VLog(.error, "finish loading, fileHandle synchronize failure: \(error)")
+        }
         
         actionLoop()
     }

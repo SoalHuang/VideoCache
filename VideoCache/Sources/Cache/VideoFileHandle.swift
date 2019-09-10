@@ -21,7 +21,9 @@ protocol VideoFileHandleType {
     
     func writeData(data: Data, for range: VideoRange) throws
     
-    func synchronize(notify: Bool)
+    func synchronize(notify: Bool) throws
+    
+    func close() throws
 }
 
 extension VideoFileHandleType {
@@ -44,9 +46,12 @@ class VideoFileHandle {
     let filePath: String
     
     deinit {
-        synchronize(notify: false)
-        readHandle.closeFile()
-        writeHandle.closeFile()
+        do {
+            try synchronize(notify: false)
+            try close()
+        } catch {
+            VLog(.error, "fileHandle synchronize and close failure: \(error)")
+        }
         NotificationCenter.default.removeObserver(self, name: UIApplication.didEnterBackgroundNotification, object: nil)
     }
     
@@ -61,8 +66,8 @@ class VideoFileHandle {
     
     lazy var configuration: VideoConfigurationType = VideoCacheManager.default.configuration(for: url)
     
-    private lazy var readHandle = FileHandle(forReadingAtPath: filePath)!
-    private lazy var writeHandle = FileHandle(forWritingAtPath: filePath)!
+    private lazy var readHandle = FileHandle(forReadingAtPath: filePath)
+    private lazy var writeHandle = FileHandle(forWritingAtPath: filePath)
     
     private var isWriting: Bool = false
     
@@ -99,31 +104,43 @@ extension VideoFileHandle: VideoFileHandleType {
     }
     
     func readData(for range: VideoRange) throws -> Data {
+        
         lock.lock()
         defer { lock.unlock() }
         
-        readHandle.seek(toFileOffset: UInt64(range.lowerBound))
-        return readHandle.readData(ofLength: Int(range.length))
+        try readHandle?.throwError_seek(toFileOffset: UInt64(range.lowerBound))
+        return try readHandle?.throwError_readData(ofLength: UInt(range.length)) ?? Data()
     }
     
     func writeData(data: Data, for range: VideoRange) throws {
+        
         lock.lock()
         defer { lock.unlock() }
+        
+        guard let handle = writeHandle else {
+            return
+        }
         
         isWriting = true
         
         VLog(.data, "write data: \(data), for: \(range)")
         
-        writeHandle.seek(toFileOffset: UInt64(range.lowerBound))
-        writeHandle.write(data)
+        try handle.throwError_seek(toFileOffset: UInt64(range.lowerBound))
+        try handle.throwError_write(data)
+        
         configuration.add(fragment: range)
     }
     
-    func synchronize(notify: Bool = true) {
+    func synchronize(notify: Bool = true) throws {
+        
         lock.lock()
         defer { lock.unlock() }
         
-        writeHandle.synchronizeFile()
+        guard let handle = writeHandle else {
+            return
+        }
+        
+        try handle.throwError_synchronizeFile()
         configuration.synchronize()
         
         if notify {
@@ -132,11 +149,23 @@ extension VideoFileHandle: VideoFileHandleType {
                                             userInfo: [VideoFileHandle.VideoURLKey: self.url])
         }
     }
+    
+    func close() throws {
+        try readHandle?.throwError_closeFile()
+        try writeHandle?.throwError_closeFile()
+    }
 }
 
 extension VideoFileHandle {
     
-    @objc func applicationDidEnterBackground() {
-        if isWriting { synchronize() }
+    @objc
+    func applicationDidEnterBackground() {
+        if isWriting {
+            do {
+                try synchronize()
+            } catch {
+                VLog(.error, "fileHandel did enter background synchronize failure: \(error)")
+            }
+        }
     }
 }

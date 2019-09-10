@@ -14,6 +14,8 @@ extension VideoLRUConfiguration {
     
     func use(url: VURL) {
         VLog(.info, "use url: \(url)")
+        lock.lock()
+        defer { lock.unlock() }
         if  let content = contentMap[url.cacheKey] {
             content.use()
         } else {
@@ -25,18 +27,20 @@ extension VideoLRUConfiguration {
     
     func delete(url: VURL) {
         VLog(.info, "delete url: \(url)")
+        lock.lock()
+        defer { lock.unlock() }
         contentMap.removeValue(forKey: url.cacheKey)
         synchronize()
     }
     
     func deleteAll(without downloading: [String: VURL]) {
+        lock.lock()
+        defer { lock.unlock() }
         contentMap = contentMap.filter { downloading[$0.key] != nil }
         synchronize()
     }
     
     func synchronize() {
-        lock.lock()
-        defer { lock.unlock() }
         NSKeyedArchiver.archiveRootObject(self, toFile: filePath)
     }
 }

@@ -8,7 +8,7 @@
 
 import Foundation
 
-private let domain = "com.video.cache.domain"
+internal let error_domain = "com.video.cache.domain"
 
 enum VideoCacheErrors {
     
@@ -46,12 +46,12 @@ extension VideoCacheErrors {
 extension VideoCacheErrors {
     
     var error: Error {
-        return NSError(domain: domain, code: code, userInfo: [NSURLErrorFailingURLErrorKey : message])
+        return NSError(domain: error_domain, code: code, userInfo: [NSURLErrorFailingURLErrorKey : message])
     }
     
     func error(_ msg: String? = nil) -> Error {
         guard let `msg` = msg else { return error }
-        return NSError(domain: domain, code: code, userInfo: [NSURLErrorFailingURLErrorKey : message,
+        return NSError(domain: error_domain, code: code, userInfo: [NSURLErrorFailingURLErrorKey : message,
                                                               NSLocalizedDescriptionKey: msg])
     }
 }

@@ -30,6 +30,9 @@
 		9C103ECF22A12D4B0074949B /* UIDevice+Capacity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C103ECE22A12D4B0074949B /* UIDevice+Capacity.swift */; };
 		9C6EFBE42265B825003DE259 /* VideoLRUConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C6EFBE32265B825003DE259 /* VideoLRUConfiguration.swift */; };
 		9C75008C223B88F70024D1E8 /* CodingRange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C75008B223B88F70024D1E8 /* CodingRange.swift */; };
+		9C869B26232795D70096B72C /* NSFileHandle+Ext.h in Headers */ = {isa = PBXBuildFile; fileRef = 9C869B23232795D70096B72C /* NSFileHandle+Ext.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		9C869B27232795D70096B72C /* NSFileHandle+Ext.m in Sources */ = {isa = PBXBuildFile; fileRef = 9C869B24232795D70096B72C /* NSFileHandle+Ext.m */; };
+		9C869B28232795D70096B72C /* FileHandle+Exception.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C869B25232795D70096B72C /* FileHandle+Exception.swift */; };
 		9CD29EFF223A43EE009F70EB /* Int64+FileSize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CD29EFE223A43EE009F70EB /* Int64+FileSize.swift */; };
 /* End PBXBuildFile section */
 
@@ -59,6 +62,9 @@
 		9C103ECE22A12D4B0074949B /* UIDevice+Capacity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIDevice+Capacity.swift"; sourceTree = "<group>"; };
 		9C6EFBE32265B825003DE259 /* VideoLRUConfiguration.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoLRUConfiguration.swift; sourceTree = "<group>"; };
 		9C75008B223B88F70024D1E8 /* CodingRange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodingRange.swift; sourceTree = "<group>"; };
+		9C869B23232795D70096B72C /* NSFileHandle+Ext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSFileHandle+Ext.h"; sourceTree = "<group>"; };
+		9C869B24232795D70096B72C /* NSFileHandle+Ext.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSFileHandle+Ext.m"; sourceTree = "<group>"; };
+		9C869B25232795D70096B72C /* FileHandle+Exception.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "FileHandle+Exception.swift"; sourceTree = "<group>"; };
 		9CD29EFE223A43EE009F70EB /* Int64+FileSize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Int64+FileSize.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -125,6 +131,9 @@
 				9C0842832226324200EB8F85 /* Error+Ext.swift */,
 				9CD29EFE223A43EE009F70EB /* Int64+FileSize.swift */,
 				9C103ECE22A12D4B0074949B /* UIDevice+Capacity.swift */,
+				9C869B25232795D70096B72C /* FileHandle+Exception.swift */,
+				9C869B23232795D70096B72C /* NSFileHandle+Ext.h */,
+				9C869B24232795D70096B72C /* NSFileHandle+Ext.m */,
 			);
 			path = Extension;
 			sourceTree = "<group>";
@@ -177,6 +186,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9C084210222530D700EB8F85 /* VideoCache.h in Headers */,
+				9C869B26232795D70096B72C /* NSFileHandle+Ext.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -270,7 +280,9 @@
 				9C75008C223B88F70024D1E8 /* CodingRange.swift in Sources */,
 				9C08429E2226324200EB8F85 /* URL+Ext.swift in Sources */,
 				9C0842992226324200EB8F85 /* Range+Ext.swift in Sources */,
+				9C869B28232795D70096B72C /* FileHandle+Exception.swift in Sources */,
 				9C0842A32226324200EB8F85 /* ResourceLoaderDelegate.swift in Sources */,
+				9C869B27232795D70096B72C /* NSFileHandle+Ext.m in Sources */,
 				9C0842A42226324200EB8F85 /* VideoLoader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -403,6 +415,7 @@
 		9C084214222530D700EB8F85 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
@@ -419,6 +432,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.putao.VideoCache;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -427,6 +441,7 @@
 		9C084215222530D700EB8F85 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;

@@ -18,11 +18,11 @@ protocol VideoLoaderType: NSObjectProtocol {
 extension VideoLoader: VideoLoaderType {
     
     func add(loadingRequest: AVAssetResourceLoadingRequest) {
-        let loader = VideoDownloader(url: url, loadingRequest: loadingRequest, fileHandle: fileHandle)
-        loader.delegate = self
-        downLoaders.append(loader)
+        let downloader = VideoDownloader(url: url, loadingRequest: loadingRequest, fileHandle: fileHandle)
+        downloader.delegate = self
+        downLoaders.append(downloader)
+        downloader.execute()
         VideoCacheManager.default.addDownloading(url: url)
-        loader.execute()
     }
     
     func remove(loadingRequest: AVAssetResourceLoadingRequest) {
@@ -43,6 +43,7 @@ extension VideoLoader: VideoLoaderType {
 extension VideoLoader: VideoDownloaderDelegate {
     
     func downloaderFinish(_ downloader: VideoDownloader) {
+        downloader.finish()
         downLoaders.removeAll { $0.loadingRequest == downloader.loadingRequest }
     }
     
