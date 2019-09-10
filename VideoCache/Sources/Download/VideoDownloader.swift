@@ -340,9 +340,14 @@ private class DownloaderSessionDelegate: NSObject, DownloaderSessionDelegateType
         bufferData.append(data)
         
         let bufferCount = bufferData.count
-        guard bufferCount > DownloadBufferLimit else { return }
         
-        let chunkRange = NSRange(location: bufferData.startIndex, length: DownloadBufferLimit)
+        let multiple = bufferCount / DownloadBufferLimit
+        
+        guard multiple > 1 else { return }
+        
+        let length = DownloadBufferLimit * multiple
+        
+        let chunkRange = NSRange(location: bufferData.startIndex, length: length)
         
         VLog(.info, "task: buffer data count: \(bufferCount), subdata: \(chunkRange)")
         
