@@ -343,7 +343,7 @@ private class DownloaderSessionDelegate: NSObject, DownloaderSessionDelegateType
         
         let multiple = bufferCount / DownloadBufferLimit
         
-        guard multiple > 1 else { return }
+        guard multiple >= 1 else { return }
         
         let length = DownloadBufferLimit * multiple
         
