@@ -5,7 +5,7 @@ VideoCache is an AVPlayerItem Cache library written in Swift.
 ## Example
 
 ```swift
-let playerItem = AVPlayerItem(remote: url, cacheKey: "identifier")
+let playerItem = AVPlayerItem(remote: url, cacheKey: <#special key for this media or nil#>)
 let player = AVPlayer(playerItem: playerItem)
 ```
 
