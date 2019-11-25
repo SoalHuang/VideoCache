@@ -8,7 +8,29 @@
 
 import UIKit
 
+public protocol VideoURLType {
+    
+    var key: String { get }
+    var url: URL { get }
+    var includeVideoCacheSchemeUrl: URL { get }
+}
+
 let VideoCacheConfigFileExt = "cfg"
+
+extension VURL: VideoURLType {
+    
+    public var key: String {
+        return cacheKey
+    }
+    
+    public var url: URL {
+        return originUrl
+    }
+    
+    public var includeVideoCacheSchemeUrl: URL {
+        return URL(string: URL.VideoCacheScheme + url.absoluteString)!
+    }
+}
 
 class VURL: NSObject, NSCoding {
     
@@ -35,20 +57,5 @@ class VURL: NSObject, NSCoding {
     
     override var description: String {
         return ["cacheKey": cacheKey, "originUrl": originUrl].description
-    }
-}
-
-extension VURL {
-    
-    var url: URL {
-        return URL(string: URL.VideoCacheScheme + originUrl.absoluteString)!
-    }
-    
-    var cacheFileName: String {
-        return cacheKey.CMD5.appending(".\(originUrl.pathExtension)")
-    }
-    
-    var configFileName: String {
-        return cacheFileName.appending(".\(VideoCacheConfigFileExt)")
     }
 }

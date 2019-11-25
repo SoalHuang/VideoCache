@@ -10,21 +10,14 @@ import Foundation
 
 protocol VideoConfigurationType: NSObjectProtocol {
     
-    var filePath: String { get }
-    
     var contentInfo: ContentInfo { get set }
     
     func overlaps(_ other: VideoRange) -> [VideoRange]
     
     func add(fragment: VideoRange)
-    func synchronize()
-}
-
-extension VideoConfigurationType {
     
-    var fileName: String {
-        return (filePath as NSString).lastPathComponent
-    }
+    @discardableResult
+    func synchronize(by manager: VideoCacheManager) -> Bool
 }
 
 class VideoConfiguration: NSObject, NSCoding {
@@ -69,15 +62,16 @@ class VideoConfiguration: NSObject, NSCoding {
 
 extension VideoConfiguration: VideoConfigurationType {
     
-    var filePath: String {
-        return VideoCacheManager.default.configurationPath(for: url)
+    func filePath(by manager: VideoCacheManager) -> String {
+        return manager.configurationPath(for: url)
     }
     
-    func synchronize() {
+    @discardableResult
+    func synchronize(by manager: VideoCacheManager) -> Bool {
         lock.lock()
         defer { lock.unlock() }
         lastTimeInterval = Date().timeIntervalSince1970
-        NSKeyedArchiver.archiveRootObject(self, toFile: filePath)
+        return NSKeyedArchiver.archiveRootObject(self, toFile: filePath(by: manager))
     }
     
     func overlaps(_ range: VideoRange) -> [VideoRange] {

@@ -8,44 +8,13 @@
 
 import Foundation
 
-let lruFileName = "lru"
-
-extension VideoLRUConfiguration {
+public protocol VideoLRUConfigurationType {
     
-    func use(url: VURL) {
-        VLog(.info, "use url: \(url)")
-        lock.lock()
-        defer { lock.unlock() }
-        if  let content = contentMap[url.cacheKey] {
-            content.use()
-        } else {
-            let content = LRUContent(url: url)
-            contentMap[url.cacheKey] = content
-        }
-        synchronize()
-    }
-    
-    func delete(url: VURL) {
-        VLog(.info, "delete url: \(url)")
-        lock.lock()
-        defer { lock.unlock() }
-        contentMap.removeValue(forKey: url.cacheKey)
-        synchronize()
-    }
-    
-    func deleteAll(without downloading: [String: VURL]) {
-        lock.lock()
-        defer { lock.unlock() }
-        contentMap = contentMap.filter { downloading[$0.key] != nil }
-        synchronize()
-    }
-    
-    func synchronize() {
-        NSKeyedArchiver.archiveRootObject(self, toFile: filePath)
-    }
+    func oldestURL(without downloading: [String: VideoURLType]) -> VideoURLType?
 }
 
-extension VideoLRUConfiguration {
+extension VideoLRUConfiguration: VideoLRUConfigurationType {
+    
     /*
      time weight is 2, use weight is 1,
      time sort:     [A, B, C, D, E, F]
@@ -57,7 +26,7 @@ extension VideoLRUConfiguration {
      result sort:   [C(5), E(9), D(10), A(11), B(14), F(14)]
      oldest:        C(5)
      */
-    func oldestURL(without downloading: [String: VURL]) -> VURL? {
+    func oldestURL(without downloading: [String: VideoURLType]) -> VideoURLType? {
         lock.lock()
         defer { lock.unlock() }
         let urls = contentMap.filter { downloading[$0.key] == nil }.values
@@ -69,14 +38,62 @@ extension VideoLRUConfiguration {
     }
 }
 
+let lruFileName = "lru"
+
+extension VideoLRUConfiguration {
+    
+    @discardableResult
+    func use(url: VURL) -> Bool {
+        VLog(.info, "use url: \(url)")
+        lock.lock()
+        defer { lock.unlock() }
+        if let content = contentMap[url.cacheKey] {
+            content.use()
+        } else {
+            let content = LRUContent(url: url)
+            contentMap[url.cacheKey] = content
+        }
+        return synchronize()
+    }
+    
+    @discardableResult
+    func delete(url: VideoURLType) -> Bool {
+        VLog(.info, "delete url: \(url)")
+        lock.lock()
+        defer { lock.unlock() }
+        contentMap.removeValue(forKey: url.key)
+        return synchronize()
+    }
+    
+    @discardableResult
+    func deleteAll(without downloading: [String: VideoURLType]) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        contentMap = contentMap.filter { downloading[$0.key] != nil }
+        return synchronize()
+    }
+    
+    @discardableResult
+    func synchronize() -> Bool {
+        guard let path = filePath else { return false }
+        return NSKeyedArchiver.archiveRootObject(self, toFile: path)
+    }
+}
+
 class VideoLRUConfiguration: NSObject, NSCoding {
     
     var timeWeight: Int = 2
     var useWeight: Int = 1
     
-    private let filePath = VideoCacheManager.default.lruFilePath
+    var filePath: String?
     
     private var contentMap: [String: LRUContent] = [:]
+    
+    static func read(from filePath: String) -> VideoLRUConfiguration? {
+        let config = NSKeyedUnarchiver.unarchiveObject(withFile: filePath) as? VideoLRUConfiguration
+        config?.filePath = filePath
+        return config
+    }
     
     required init?(coder aDecoder: NSCoder) {
         super.init()
@@ -91,8 +108,9 @@ class VideoLRUConfiguration: NSObject, NSCoding {
         aCoder.encode(contentMap, forKey: "map")
     }
     
-    override init() {
+    init(path: String) {
         super.init()
+        filePath = path
     }
     
     private let lock = NSLock()

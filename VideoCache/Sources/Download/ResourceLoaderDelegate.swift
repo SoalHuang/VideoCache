@@ -10,7 +10,11 @@ import AVFoundation
 
 class VideoResourceLoaderDelegate: NSObject {
     
+    let manager: VideoCacheManager
+    
     let url: VURL
+    
+    let limitRange: VideoRange
     
     var loaders: [String: VideoLoaderType] = [:]
     
@@ -18,9 +22,16 @@ class VideoResourceLoaderDelegate: NSObject {
         loaders.removeAll()
     }
     
-    init(key: String, url: URL) {
+    init(manager: VideoCacheManager, key: String, url: URL, cacheLimit range: VideoRange) {
+        self.manager = manager
         self.url = VURL(cacheKey: key, originUrl: url)
+        self.limitRange = range
         super.init()
+    }
+    
+    func cancel() {
+        loaders.values.forEach { $0.cancel() }
+        loaders.removeAll()
     }
 }
 
@@ -33,7 +44,7 @@ extension VideoResourceLoaderDelegate: AVAssetResourceLoaderDelegate {
         if let loader = loaders[resourceURL.absoluteString] {
             loader.add(loadingRequest: loadingRequest)
         } else {
-            let newLoader = VideoLoader(url: url)
+            let newLoader = VideoLoader(manager: manager, url: url, cacheLimit: limitRange)
             loaders[resourceURL.absoluteString] = newLoader
             newLoader.add(loadingRequest: loadingRequest)
         }

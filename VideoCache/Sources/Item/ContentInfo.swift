@@ -40,7 +40,7 @@ class ContentInfo: NSObject, NSCoding {
             type = contentType
         }
         byteRangeAccessSupported = response.isByteRangeAccessSupported
-        totalLength = response.contentLength ?? 0
+        totalLength = response.contentRange?.1 ?? response.contentLength ?? 0
     }
     
     override var description: String {

@@ -11,7 +11,7 @@ import CommonCrypto
 
 extension String {
     
-    var CMD5: String {
+    var videoCacheMD5: String {
         let str = cString(using: String.Encoding.utf8) ?? []
         let strLen = CUnsignedInt(lengthOfBytes(using: String.Encoding.utf8))
         let digestLen = Int(CC_MD5_DIGEST_LENGTH)

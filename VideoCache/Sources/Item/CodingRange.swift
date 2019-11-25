@@ -8,8 +8,8 @@
 
 import Foundation
 
-typealias VideoRangeBounds = Int64
-typealias VideoRange = ClosedRange<VideoRangeBounds>
+public typealias VideoRangeBounds = Int64
+public typealias VideoRange = ClosedRange<VideoRangeBounds>
 
 class CodingRange: NSObject, NSCoding {
     

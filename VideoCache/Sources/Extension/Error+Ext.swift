@@ -17,7 +17,7 @@ enum VideoCacheErrors {
     case notMedia
     
     case fileHandleWriting
-    case canceled
+    case cancelled
 }
 
 extension VideoCacheErrors {
@@ -28,7 +28,7 @@ extension VideoCacheErrors {
         case .dataRequestNull:      return NSURLErrorUnknown
         case .notMedia:             return NSURLErrorResourceUnavailable
         case .fileHandleWriting:    return NSURLErrorCannotWriteToFile
-        case .canceled:             return NSURLErrorCancelled
+        case .cancelled:             return NSURLErrorCancelled
         }
     }
     
@@ -38,7 +38,7 @@ extension VideoCacheErrors {
         case .dataRequestNull:      return "data request is null"
         case .notMedia:             return "resource is not media"
         case .fileHandleWriting:    return "file handle writing"
-        case .canceled:             return "canceld"
+        case .cancelled:            return "cancelled"
         }
     }
 }

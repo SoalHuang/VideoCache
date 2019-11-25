@@ -13,7 +13,7 @@ private let PacketLimit: Int64 = Int64(1).MB
 
 protocol VideoFileHandleType {
     
-    var configuration: VideoConfigurationType { get }
+    var configuration: VideoConfiguration { get }
     
     func actions(for range: VideoRange) -> [Action]
     
@@ -21,29 +21,26 @@ protocol VideoFileHandleType {
     
     func writeData(data: Data, for range: VideoRange) throws
     
-    func synchronize(notify: Bool) throws
+    @discardableResult
+    func synchronize(notify: Bool) throws -> Bool
     
     func close() throws
 }
 
 extension VideoFileHandleType {
     
-    var isNeedUpdateContentInfo: Bool { return configuration.contentInfo.totalLength < PacketLimit }
-    
-    var contentInfo: ContentInfo {
-        get { return configuration.contentInfo }
-        set {
-            configuration.contentInfo = newValue
-            configuration.synchronize()
-        }
-    }
+    var isNeedUpdateContentInfo: Bool { return configuration.contentInfo.totalLength <= 0 }
 }
 
 class VideoFileHandle {
     
+    let manager: VideoCacheManager
+    
     let url: VURL
     
     let filePath: String
+    
+    let limitRange: VideoRange
     
     deinit {
         do {
@@ -55,16 +52,24 @@ class VideoFileHandle {
         NotificationCenter.default.removeObserver(self, name: UIApplication.didEnterBackgroundNotification, object: nil)
     }
     
-    init(url: VURL) {
+    init(manager: VideoCacheManager, url: VURL, cacheLimit range: VideoRange) {
+        
+        self.manager = manager
         self.url = url
-        filePath = VideoCacheManager.default.videoPath(for: url)
+        self.limitRange = range
+        
+        filePath = manager.videoPath(for: url)
+        
         if !FileM.fileExists(atPath: filePath) {
             FileM.createFile(atPath: filePath, contents: nil, attributes: nil)
         }
-        NotificationCenter.default.addObserver(self, selector: #selector(VideoFileHandle.applicationDidEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+        
+        checkAlreadyOverCache()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(applicationDidEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
     }
     
-    lazy var configuration: VideoConfigurationType = VideoCacheManager.default.configuration(for: url)
+    lazy var configuration: VideoConfiguration = manager.configuration(for: url)
     
     private lazy var readHandle = FileHandle(forReadingAtPath: filePath)
     private lazy var writeHandle = FileHandle(forWritingAtPath: filePath)
@@ -81,7 +86,23 @@ extension VideoFileHandle {
     static let didSynchronizeNotification: NSNotification.Name = NSNotification.Name("VideoFileHandle.didSynchronizeNotification")
 }
 
+extension VideoFileHandle {
+    
+    private func checkAlreadyOverCache() {
+        guard let downloadedContentInfo = manager.contentInfo(for: url) else { return }
+        contentInfo = downloadedContentInfo
+    }
+}
+
 extension VideoFileHandle: VideoFileHandleType {
+    
+    var contentInfo: ContentInfo {
+        get { return configuration.contentInfo }
+        set {
+            configuration.contentInfo = newValue
+            configuration.synchronize(by: manager)
+        }
+    }
     
     func actions(for range: VideoRange) -> [Action] {
         var actions: [Action] = []
@@ -104,7 +125,6 @@ extension VideoFileHandle: VideoFileHandleType {
     }
     
     func readData(for range: VideoRange) throws -> Data {
-        
         lock.lock()
         defer { lock.unlock() }
         
@@ -117,9 +137,9 @@ extension VideoFileHandle: VideoFileHandleType {
         lock.lock()
         defer { lock.unlock() }
         
-        guard let handle = writeHandle else {
-            return
-        }
+        guard let handle = writeHandle else { return }
+        
+        guard limitRange.overlaps(range) else { return }
         
         isWriting = true
         
@@ -131,23 +151,25 @@ extension VideoFileHandle: VideoFileHandleType {
         configuration.add(fragment: range)
     }
     
-    func synchronize(notify: Bool = true) throws {
+    @discardableResult
+    func synchronize(notify: Bool = true) throws -> Bool {
         
         lock.lock()
         defer { lock.unlock() }
         
-        guard let handle = writeHandle else {
-            return
-        }
+        guard let handle = writeHandle else { return false }
         
         try handle.throwError_synchronizeFile()
-        configuration.synchronize()
+        
+        let configSyncResult = configuration.synchronize(by: manager)
         
         if notify {
             NotificationCenter.default.post(name: VideoFileHandle.didSynchronizeNotification,
                                             object: nil,
                                             userInfo: [VideoFileHandle.VideoURLKey: self.url])
         }
+        
+        return configSyncResult
     }
     
     func close() throws {
@@ -160,12 +182,11 @@ extension VideoFileHandle {
     
     @objc
     func applicationDidEnterBackground() {
-        if isWriting {
-            do {
-                try synchronize()
-            } catch {
-                VLog(.error, "fileHandel did enter background synchronize failure: \(error)")
-            }
+        guard isWriting else { return }
+        do {
+            try synchronize()
+        } catch {
+            VLog(.error, "fileHandel did enter background synchronize failure: \(error)")
         }
     }
 }

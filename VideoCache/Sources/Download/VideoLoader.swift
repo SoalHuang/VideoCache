@@ -13,16 +13,17 @@ protocol VideoLoaderType: NSObjectProtocol {
     
     func add(loadingRequest: AVAssetResourceLoadingRequest)
     func remove(loadingRequest: AVAssetResourceLoadingRequest)
+    func cancel()
 }
 
 extension VideoLoader: VideoLoaderType {
     
     func add(loadingRequest: AVAssetResourceLoadingRequest) {
-        let downloader = VideoDownloader(url: url, loadingRequest: loadingRequest, fileHandle: fileHandle)
+        let downloader = VideoDownloader(manager: manager, url: url, loadingRequest: loadingRequest, fileHandle: fileHandle)
         downloader.delegate = self
         downLoaders.append(downloader)
         downloader.execute()
-        VideoCacheManager.default.addDownloading(url: url)
+        manager.addDownloading(url: url)
     }
     
     func remove(loadingRequest: AVAssetResourceLoadingRequest) {
@@ -36,7 +37,7 @@ extension VideoLoader: VideoLoaderType {
     func cancel() {
         downLoaders.forEach { $0.cancel() }
         downLoaders.removeAll()
-        VideoCacheManager.default.removeDownloading(url: url)
+        manager.removeDownloading(url: url)
     }
 }
 
@@ -55,19 +56,23 @@ extension VideoLoader: VideoDownloaderDelegate {
 
 class VideoLoader: NSObject {
     
+    let manager: VideoCacheManager
     let url: VURL
+    let limitRange: VideoRange
     
     deinit {
         VLog(.info, "VideoLoader deinit\n")
         cancel()
     }
     
-    init(url: VURL) {
+    init(manager: VideoCacheManager, url: VURL, cacheLimit range: VideoRange) {
+        self.manager = manager
         self.url = url
+        self.limitRange = range
         super.init()
     }
     
-    private lazy var fileHandle: VideoFileHandleType = VideoFileHandle(url: url)
+    private lazy var fileHandle: VideoFileHandle = VideoFileHandle(manager: manager, url: url, cacheLimit: limitRange)
     
     private var downLoaders_: [VideoDownloaderType] = []
     private let lock = NSLock()

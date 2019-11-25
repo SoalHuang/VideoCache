@@ -46,26 +46,27 @@ extension VideoDownloader: VideoDownloaderType {
         NSObject.cancelPreviousPerformRequests(withTarget: self)
         delegate = nil
         if !loadingRequest.isFinished {
-            loadingRequest.finishLoading(with: VideoCacheErrors.canceled.error)
+            loadingRequest.finishLoading(with: VideoCacheErrors.cancelled.error)
         }
         dataDelegate?.delegate = nil
         session?.invalidateAndCancel()
         dataDelegate = nil
         session = nil
-        isCanceled = true
+        isCancelled = true
     }
     
     func cancel() {
-        VLog(.info, "downloader id: \(id), canceled")
+        VLog(.info, "downloader id: \(id), cancelled")
         NSObject.cancelPreviousPerformRequests(withTarget: self)
         dataDelegate?.delegate = nil
         session?.invalidateAndCancel()
         dataDelegate = nil
         session = nil
-        isCanceled = true
+        isCancelled = true
     }
     
     func execute() {
+        
         guard let dataRequest = loadingRequest.dataRequest else {
             finishLoading(error: VideoCacheErrors.dataRequestNull.error)
             return
@@ -74,7 +75,7 @@ extension VideoDownloader: VideoDownloaderType {
         loadingRequest.contentInformationRequest?.update(contentInfo: fileHandle.contentInfo)
         
         if fileHandle.configuration.contentInfo.totalLength > 0 {
-            fileHandle.configuration.synchronize()
+            fileHandle.configuration.synchronize(by: manager)
         }
         //        else if dataRequest.requestsAllDataToEndOfResource {
         //            toEnd = true
@@ -106,22 +107,25 @@ class VideoDownloader: NSObject {
     
     weak var delegate: VideoDownloaderDelegate?
     
+    let manager: VideoCacheManager
+    
     let url: VURL
     
     let loadingRequest: AVAssetResourceLoadingRequest
     
-    var fileHandle: VideoFileHandleType
+    let fileHandle: VideoFileHandle
     
     deinit {
         VLog(.info, "downloader id: \(id), VideoDownloader deinit\n")
         NSObject.cancelPreviousPerformRequests(withTarget: self)
         session?.invalidateAndCancel()
         dataDelegate?.delegate = nil
-        isCanceled = true
+        isCancelled = true
         delegate = nil
     }
     
-    init(url: VURL, loadingRequest: AVAssetResourceLoadingRequest, fileHandle: VideoFileHandleType) {
+    init(manager: VideoCacheManager, url: VURL, loadingRequest: AVAssetResourceLoadingRequest, fileHandle: VideoFileHandle) {
+        self.manager = manager
         self.url = url
         self.loadingRequest = loadingRequest
         self.fileHandle = fileHandle
@@ -142,7 +146,7 @@ class VideoDownloader: NSObject {
     
     private var toEnd: Bool = false
     
-    private var isCanceled: Bool = false
+    private var isCancelled: Bool = false
     
     private var writeOffset: Int64 = 0
 }
@@ -156,8 +160,8 @@ extension VideoDownloader {
     
     @objc
     func actionLoop() {
-        if isCanceled {
-            finishLoading(error: VideoCacheErrors.canceled.error)
+        if isCancelled {
+            finishLoading(error: VideoCacheErrors.cancelled.error)
             return
         }
         guard actions.count > 0 else {
@@ -182,7 +186,7 @@ extension VideoDownloader: DownloaderSessionDelegateDelegate {
     }
     
     func downloaderSession(_ delegate: DownloaderSessionDelegateType, didReceive data: Data) {
-        if isCanceled { return }
+        if isCancelled { return }
         write(data: data)
         loadingRequest.dataRequest?.respond(with: data)
     }
@@ -201,7 +205,7 @@ extension VideoDownloader {
     
     func receivedLocal(data: Data) {
         loadingRequest.dataRequest?.respond(with: data)
-        perform(#selector(VideoDownloader.actionLoop), with: nil, afterDelay: 0.1)
+        perform(#selector(actionLoop), with: nil, afterDelay: 0.1)
     }
     
     func finishLoading(error: Error?) {
@@ -220,13 +224,11 @@ extension VideoDownloader {
             toEnd.toggle()
             actions = fileHandle.actions(for: VideoRange(0, fileHandle.contentInfo.totalLength))
         }
-        
         do {
             try fileHandle.synchronize(notify: true)
         } catch {
             VLog(.error, "finish loading, fileHandle synchronize failure: \(error)")
         }
-        
         actionLoop()
     }
 }
@@ -268,7 +270,7 @@ extension VideoDownloader {
     }
     
     func write(data: Data) {
-        guard VideoCacheManager.default.allowWrite else { return }
+        guard manager.allowWrite else { return }
         let range = VideoRange(writeOffset, writeOffset + Int64(data.count))
         VLog(.data, "downloader id: \(id), write data range: (\(range)) length: \(range.length)")
         do {
@@ -293,7 +295,7 @@ protocol DownloaderSessionDelegateDelegate: NSObjectProtocol {
     func downloaderSession(_ delegate: DownloaderSessionDelegateType, didCompleteWithError error: Error?)
 }
 
-private let DownloadBufferLimit: Int = 64.KB
+private let DownloadBufferLimit: Int = 32.KB
 
 private class DownloaderSessionDelegate: NSObject, DownloaderSessionDelegateType {
     
