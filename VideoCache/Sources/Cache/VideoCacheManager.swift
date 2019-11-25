@@ -28,8 +28,8 @@ let FileM = FileManager.default
 
 public class VideoCacheManager: NSObject {
     
-    /// shared instance
-    public static let `default` = VideoCacheManager()
+    /// shared instance, directory default NSTemporaryDirectory/VideoCache
+    public static let `default` = VideoCacheManager(directory: NSTemporaryDirectory().appending("/VideoCache"))
     
     /// default NSTemporaryDirectory/VideoCache/
     public let directory: String
@@ -82,8 +82,7 @@ public class VideoCacheManager: NSObject {
         NotificationCenter.default.removeObserver(self, name: UIApplication.didBecomeActiveNotification, object: nil)
     }
     
-    /// path default NSTemporaryDirectory/VideoCache
-    public init(directory path: String = NSTemporaryDirectory().appending("/VideoCache")) {
+    public init(directory path: String) {
         
         directory = path
         
