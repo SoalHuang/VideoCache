@@ -201,7 +201,7 @@ extension VideoDownloader {
     
     func receivedLocal(data: Data) {
         loadingRequest.dataRequest?.respond(with: data)
-        perform(#selector(actionLoop), with: nil, afterDelay: 0.1)
+        perform(#selector(VideoDownloader.actionLoop), with: nil, afterDelay: 0.1)
     }
     
     func finishLoading(error: Error?) {

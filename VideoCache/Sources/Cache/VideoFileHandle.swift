@@ -61,7 +61,7 @@ class VideoFileHandle {
         if !FileM.fileExists(atPath: filePath) {
             FileM.createFile(atPath: filePath, contents: nil, attributes: nil)
         }
-        NotificationCenter.default.addObserver(self, selector: #selector(applicationDidEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(VideoFileHandle.applicationDidEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
     }
     
     lazy var configuration: VideoConfigurationType = VideoCacheManager.default.configuration(for: url)

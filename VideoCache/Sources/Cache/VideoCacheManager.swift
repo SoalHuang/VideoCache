@@ -81,8 +81,8 @@ public class VideoCacheManager: NSObject {
         
         checkAllow()
         
-        NotificationCenter.default.addObserver(self, selector: #selector(autoCheckUsage), name: VideoFileHandle.didSynchronizeNotification, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActive), name: UIApplication.didBecomeActiveNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(VideoCacheManager.autoCheckUsage), name: VideoFileHandle.didSynchronizeNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(VideoCacheManager.appDidBecomeActive), name: UIApplication.didBecomeActiveNotification, object: nil)
     }
     
     private lazy var lru: VideoLRUConfiguration = {
