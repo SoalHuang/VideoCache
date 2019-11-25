@@ -180,7 +180,7 @@ extension VideoDownloader {
 extension VideoDownloader: DownloaderSessionDelegateDelegate {
     
     func downloaderSession(_ delegate: DownloaderSessionDelegateType, didReceive response: URLResponse) {
-        if fileHandle.isNeedUpdateContentInfo {
+        if response.isMediaSource, fileHandle.isNeedUpdateContentInfo {
             update(contentInfo: ContentInfo(response: response))
         }
     }
