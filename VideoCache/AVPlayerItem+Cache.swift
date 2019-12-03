@@ -15,14 +15,15 @@ extension AVPlayerItem {
     public convenience init(manager: VideoCacheManager = VideoCacheManager.default,
                             remote url: URL,
                             cacheKey key: String? = nil,
-                            cacheLimit range: VideoRange? = nil) {
+                            cacheRanges: [VideoRange] = []) {
         
         let `key` = key ?? url.absoluteString.videoCacheMD5
         
-        manager.use(url: VURL(cacheKey: key, originUrl: url))
+        let videoUrl = VURL(cacheKey: key, originUrl: url)
+        manager.use(url: videoUrl)
         
-        let limitRange = range ?? VideoRange(0, VideoRangeBounds.max)
-        let loaderDelegate = VideoResourceLoaderDelegate(manager: manager, key: key, url: url, cacheLimit: limitRange)
+        let ranges = cacheRanges.count > 0 ? cacheRanges : [VideoRange(0, VideoRangeBounds.max)]
+        let loaderDelegate = VideoResourceLoaderDelegate(manager: manager, url: videoUrl, cacheRanges: ranges)
         let urlAsset = AVURLAsset(url: loaderDelegate.url.includeVideoCacheSchemeUrl, options: nil)
         urlAsset.resourceLoader.setDelegate(loaderDelegate, queue: .main)
         

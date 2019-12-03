@@ -8,14 +8,14 @@
 
 import Foundation
 
-extension Range {
+public extension Range {
     
     init(_ lower: Bound, _ upper: Bound) {
         self.init(uncheckedBounds: (lower, upper))
     }
 }
 
-extension ClosedRange {
+public extension ClosedRange {
     
     init(_ lower: Bound, _ upper: Bound) {
         self.init(uncheckedBounds: (lower, upper))

@@ -24,10 +24,11 @@
 		9C0842A32226324200EB8F85 /* ResourceLoaderDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0842902226324200EB8F85 /* ResourceLoaderDelegate.swift */; };
 		9C0842A42226324200EB8F85 /* VideoLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0842912226324200EB8F85 /* VideoLoader.swift */; };
 		9C0842A52226324200EB8F85 /* ContentInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0842932226324200EB8F85 /* ContentInfo.swift */; };
-		9C0842A62226324200EB8F85 /* VURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0842942226324200EB8F85 /* VURL.swift */; };
 		9C0842A72226324200EB8F85 /* Action.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0842952226324200EB8F85 /* Action.swift */; };
 		9C0842AB222633DA00EB8F85 /* VLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0842AA222633DA00EB8F85 /* VLog.swift */; };
 		9C103ECF22A12D4B0074949B /* UIDevice+Capacity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C103ECE22A12D4B0074949B /* UIDevice+Capacity.swift */; };
+		9C26F3B32395FB7F00FF9E8B /* VURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C26F3B22395FB7F00FF9E8B /* VURL.swift */; };
+		9C26F3B52395FBA400FF9E8B /* VideoCachePaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C26F3B42395FBA400FF9E8B /* VideoCachePaths.swift */; };
 		9C6EFBE42265B825003DE259 /* VideoLRUConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C6EFBE32265B825003DE259 /* VideoLRUConfiguration.swift */; };
 		9C75008C223B88F70024D1E8 /* CodingRange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C75008B223B88F70024D1E8 /* CodingRange.swift */; };
 		9C869B26232795D70096B72C /* NSFileHandle+Ext.h in Headers */ = {isa = PBXBuildFile; fileRef = 9C869B23232795D70096B72C /* NSFileHandle+Ext.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -56,10 +57,11 @@
 		9C0842902226324200EB8F85 /* ResourceLoaderDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResourceLoaderDelegate.swift; sourceTree = "<group>"; };
 		9C0842912226324200EB8F85 /* VideoLoader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoLoader.swift; sourceTree = "<group>"; };
 		9C0842932226324200EB8F85 /* ContentInfo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentInfo.swift; sourceTree = "<group>"; };
-		9C0842942226324200EB8F85 /* VURL.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VURL.swift; sourceTree = "<group>"; };
 		9C0842952226324200EB8F85 /* Action.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Action.swift; sourceTree = "<group>"; };
 		9C0842AA222633DA00EB8F85 /* VLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VLog.swift; sourceTree = "<group>"; };
 		9C103ECE22A12D4B0074949B /* UIDevice+Capacity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIDevice+Capacity.swift"; sourceTree = "<group>"; };
+		9C26F3B22395FB7F00FF9E8B /* VURL.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VURL.swift; sourceTree = "<group>"; };
+		9C26F3B42395FBA400FF9E8B /* VideoCachePaths.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoCachePaths.swift; sourceTree = "<group>"; };
 		9C6EFBE32265B825003DE259 /* VideoLRUConfiguration.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoLRUConfiguration.swift; sourceTree = "<group>"; };
 		9C75008B223B88F70024D1E8 /* CodingRange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodingRange.swift; sourceTree = "<group>"; };
 		9C869B23232795D70096B72C /* NSFileHandle+Ext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSFileHandle+Ext.h"; sourceTree = "<group>"; };
@@ -162,10 +164,10 @@
 		9C0842922226324200EB8F85 /* Item */ = {
 			isa = PBXGroup;
 			children = (
-				9C0842942226324200EB8F85 /* VURL.swift */,
 				9C0842932226324200EB8F85 /* ContentInfo.swift */,
 				9C0842952226324200EB8F85 /* Action.swift */,
 				9C75008B223B88F70024D1E8 /* CodingRange.swift */,
+				9C26F3B22395FB7F00FF9E8B /* VURL.swift */,
 			);
 			path = Item;
 			sourceTree = "<group>";
@@ -174,6 +176,7 @@
 			isa = PBXGroup;
 			children = (
 				9C0842AA222633DA00EB8F85 /* VLog.swift */,
+				9C26F3B42395FBA400FF9E8B /* VideoCachePaths.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -269,15 +272,16 @@
 				9C0842A02226324200EB8F85 /* VideoFileHandle.swift in Sources */,
 				9C6EFBE42265B825003DE259 /* VideoLRUConfiguration.swift in Sources */,
 				9C103ECF22A12D4B0074949B /* UIDevice+Capacity.swift in Sources */,
-				9C0842A62226324200EB8F85 /* VURL.swift in Sources */,
 				9C0842972226324200EB8F85 /* URLResponse+Ext.swift in Sources */,
 				9C0842A12226324200EB8F85 /* VideoConfiguration.swift in Sources */,
 				9C08429A2226324200EB8F85 /* AVAssetResourceLoadingContentInformationRequest+Ext.swift in Sources */,
 				9C0842A22226324200EB8F85 /* VideoDownloader.swift in Sources */,
 				9C08429F2226324200EB8F85 /* VideoCacheManager.swift in Sources */,
+				9C26F3B52395FBA400FF9E8B /* VideoCachePaths.swift in Sources */,
 				9C0842962226324200EB8F85 /* AVPlayerItem+Cache.swift in Sources */,
 				9CD29EFF223A43EE009F70EB /* Int64+FileSize.swift in Sources */,
 				9C75008C223B88F70024D1E8 /* CodingRange.swift in Sources */,
+				9C26F3B32395FB7F00FF9E8B /* VURL.swift in Sources */,
 				9C08429E2226324200EB8F85 /* URL+Ext.swift in Sources */,
 				9C0842992226324200EB8F85 /* Range+Ext.swift in Sources */,
 				9C869B28232795D70096B72C /* FileHandle+Exception.swift in Sources */,

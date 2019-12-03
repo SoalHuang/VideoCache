@@ -17,7 +17,8 @@ class ViewController: UIViewController {
     
     func setupVideoCache() {
         
-        VideoCacheManager.default.logLevel = .request
+        VideoCacheManager.logLevel = .request
+        
         VideoCacheManager.default.capacityLimit = Int64(1).GB
         
         let version = 1

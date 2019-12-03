@@ -16,14 +16,18 @@ protocol VideoLoaderType: NSObjectProtocol {
     func cancel()
 }
 
+protocol VideoLoaderDelegate: NSObjectProtocol {
+    
+    func loaderAllowWriteData(_ loader: VideoLoader) -> Bool
+}
+
 extension VideoLoader: VideoLoaderType {
     
     func add(loadingRequest: AVAssetResourceLoadingRequest) {
-        let downloader = VideoDownloader(manager: manager, url: url, loadingRequest: loadingRequest, fileHandle: fileHandle)
+        let downloader = VideoDownloader(paths: paths, session: session, url: url, loadingRequest: loadingRequest, fileHandle: fileHandle)
         downloader.delegate = self
         downLoaders.append(downloader)
         downloader.execute()
-        manager.addDownloading(url: url)
     }
     
     func remove(loadingRequest: AVAssetResourceLoadingRequest) {
@@ -35,13 +39,17 @@ extension VideoLoader: VideoLoaderType {
     }
     
     func cancel() {
+        VLog(.info, "VideoLoader cancel\n")
         downLoaders.forEach { $0.cancel() }
         downLoaders.removeAll()
-        manager.removeDownloading(url: url)
     }
 }
 
 extension VideoLoader: VideoDownloaderDelegate {
+    
+    func downloaderAllowWriteData(_ downloader: VideoDownloader) -> Bool {
+        return delegate?.loaderAllowWriteData(self) ?? false
+    }
     
     func downloaderFinish(_ downloader: VideoDownloader) {
         downloader.finish()
@@ -54,30 +62,92 @@ extension VideoLoader: VideoDownloaderDelegate {
     }
 }
 
+fileprivate struct DownloadQueue {
+    
+    static let shared = DownloadQueue()
+    
+    let queue: OperationQueue = OperationQueue()
+    
+    init() {
+        queue.name = "com.video.cache.download.queue"
+    }
+}
+
 class VideoLoader: NSObject {
     
-    let manager: VideoCacheManager
-    let url: VURL
-    let limitRange: VideoRange
+    weak var delegate: VideoLoaderDelegate?
+    
+    let paths: VideoCachePaths
+    let url: VideoURLType
+    let cacheRanges: [VideoRange]
+    
+    var session: URLSession?
     
     deinit {
         VLog(.info, "VideoLoader deinit\n")
         cancel()
+        session?.invalidateAndCancel()
+        session = nil
     }
     
-    init(manager: VideoCacheManager, url: VURL, cacheLimit range: VideoRange) {
-        self.manager = manager
+    init(paths: VideoCachePaths, url: VideoURLType, cacheRanges: [VideoRange], delegate: VideoLoaderDelegate?) {
+        
+        self.paths = paths
         self.url = url
-        self.limitRange = range
+        self.cacheRanges = cacheRanges
+        self.delegate = delegate
+        
         super.init()
+        
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 30
+        configuration.timeoutIntervalForResource = 60
+        configuration.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        configuration.networkServiceType = .video
+        session = URLSession(configuration: configuration, delegate: self, delegateQueue: DownloadQueue.shared.queue)
     }
     
-    private lazy var fileHandle: VideoFileHandle = VideoFileHandle(manager: manager, url: url, cacheLimit: limitRange)
+    private lazy var fileHandle: VideoFileHandle = VideoFileHandle(paths: paths, url: url, cacheRanges: cacheRanges)
     
     private var downLoaders_: [VideoDownloaderType] = []
     private let lock = NSLock()
     private var downLoaders: [VideoDownloaderType] {
         get { lock.lock(); defer { lock.unlock() }; return downLoaders_ }
         set { lock.lock(); defer { lock.unlock() }; downLoaders_ = newValue }
+    }
+}
+
+extension VideoLoader: URLSessionDataDelegate {
+    
+    func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        if let serverTrust = challenge.protectionSpace.serverTrust {
+            completionHandler(.useCredential, URLCredential(trust: serverTrust))
+        } else {
+            completionHandler(.useCredential, nil)
+        }
+    }
+    
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        downLoaders.forEach {
+            if $0.task == dataTask {
+                $0.dataReceiver?.urlSession?(session, dataTask: dataTask, didReceive: response, completionHandler: completionHandler)
+            }
+        }
+    }
+    
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        downLoaders.forEach {
+            if $0.task == dataTask {
+                $0.dataReceiver?.urlSession?(session, dataTask: dataTask, didReceive: data)
+            }
+        }
+    }
+    
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        downLoaders.forEach {
+            if $0.task == task {
+                $0.dataReceiver?.urlSession?(session, task: task, didCompleteWithError: error)
+            }
+        }
     }
 }

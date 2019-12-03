@@ -66,7 +66,7 @@ public class VideoCacheManager: NSObject {
     private var allowWrite_: BoolValues = .default(true)
     
     /// default none
-    public var logLevel: VideoCacheLogLevel {
+    public static var logLevel: VideoCacheLogLevel {
         get { return videoCacheLogLevel }
         set { videoCacheLogLevel = newValue }
     }
@@ -97,7 +97,7 @@ public class VideoCacheManager: NSObject {
     }
     
     private lazy var lru: VideoLRUConfiguration = {
-        let filePath = lruFilePath
+        let filePath = paths.lruFilePath()
         if let lruConfig = VideoLRUConfiguration.read(from: filePath) {
             lruConfig.filePath = filePath
             return lruConfig
@@ -109,9 +109,11 @@ public class VideoCacheManager: NSObject {
     
     private var lastCheckTimeInterval: TimeInterval = Date().timeIntervalSince1970
     
-    private var downloadingUrls_: [String: VURL] = [:]
+    private var downloadingUrls_: [String: VideoURLType] = [:]
     
     private let lock = NSLock()
+    
+    private var reserveRequired = true
 }
 
 extension VideoCacheManager {
@@ -174,27 +176,80 @@ extension VideoCacheManager {
     }
     
     /// if cache key is nil, it will be filled by url.absoluteString's md5 string
-    public func clean(remote url: URL, cacheKey key: String? = nil) throws {
-        let `key` = key ?? url.absoluteString.videoCacheMD5
-        let `url` = VURL(cacheKey: key, originUrl: url)
+    public func clean(url: VideoURLType, reserve: Bool = true) throws {
+        
         VLog(.info, "clean: \(url)")
-        if let _ = downloadingUrls[url.cacheKey] {
+        
+        if let _ = downloadingUrls[url.key] {
             throw VideoCacheErrors.fileHandleWriting.error
         }
-        try FileM.removeItem(atPath: configurationPath(for: url))
-        try FileM.removeItem(atPath: videoPath(for: url))
-        lru.delete(url: url)
+        
+        let infoPath = paths.contenInfoPath(for: url)
+        let configPath = paths.configurationPath(for: url)
+        let videoPath = paths.videoPath(for: url)
+        
+        let cleanAllClosure = { [weak self] in
+            try FileM.removeItem(atPath: infoPath)
+            try FileM.removeItem(atPath: configPath)
+            try FileM.removeItem(atPath: videoPath)
+            self?.lru.delete(url: url)
+        }
+        
+        guard let config = paths.configuration(for: infoPath) else {
+            try cleanAllClosure()
+            return
+        }
+        
+        let reservedLength = config.reservedLength
+        
+        guard reservedLength > 0
+            else {
+            try cleanAllClosure()
+            return
+        }
+        
+        guard reserve else {
+            try cleanAllClosure()
+            return
+        }
+        
+        guard let fileHandle = FileHandle(forUpdatingAtPath: videoPath) else {
+            try cleanAllClosure()
+            return
+        }
+        
+        do {
+            try fileHandle.throwError_truncateFile(atOffset: UInt64(reservedLength))
+            try fileHandle.throwError_synchronizeFile()
+            try fileHandle.throwError_closeFile()
+            try FileM.removeItem(atPath: configPath)
+        } catch {
+            try cleanAllClosure()
+        }
     }
     
     /// clean all cache
     public func cleanAll() throws {
-        lru.deleteAll(without: downloadingUrls)
-        var downloadingURLs: [String: VURL] = [:]
-        downloadingUrls.forEach {
-            downloadingURLs[cacheFileName(for: $0.value)] = $0.value
-            downloadingURLs[configFileName(for: $0.value)] = $0.value
+        
+        let urls = downloadingUrls
+        
+        guard urls.count > 0 else {
+            try FileM.removeItem(atPath: directory)
+            createCacheDirectory()
+            return
         }
+        
+        lru.deleteAll(without: urls)
+        
+        var downloadingURLs: [String: VideoURLType] = [:]
+        urls.forEach {
+            downloadingURLs[paths.cacheFileName(for: $0.value)] = $0.value
+            downloadingURLs[paths.configFileName(for: $0.value)] = $0.value
+            downloadingURLs[paths.contenInfoPath(for: $0.value)] = $0.value
+        }
+        
         let contents = try FileM.contentsOfDirectory(atPath: directory).filter { downloadingURLs[$0] == nil }
+        
         for content in contents {
             try FileM.removeItem(atPath: directory.appending("/\(content)"))
         }
@@ -203,109 +258,46 @@ extension VideoCacheManager {
 
 extension VideoCacheManager {
     
-    func cacheFileNamePrefix(for url: VURL) -> String {
-        return fileNameConvertion?(url.cacheKey) ?? url.cacheKey.videoCacheMD5
-    }
-    
-    func cacheFileNamePrefix(for cacheKey: String) -> String {
-        return fileNameConvertion?(cacheKey) ?? cacheKey.videoCacheMD5
-    }
-    
-    func cacheFileName(for url: VURL) -> String {
-        return cacheFileNamePrefix(for: url).appending(".\(url.originUrl.pathExtension)")
-    }
-    
-    func configFileName(for url: VURL) -> String {
-        return cacheFileName(for: url).appending(".\(VideoCacheConfigFileExt)")
-    }
-    
-    func contentFileName(for url: VURL) -> String {
-        return url.cacheKey.appending(".data")
-    }
-    
-    func contentFileName(for cacheKey: String) -> String {
-        return cacheKey.appending(".data")
-    }
-}
-
-extension VideoCacheManager {
-    
-    func use(url: VURL) {
+    func use(url: VideoURLType) {
         lru.use(url: url)
     }
     
-    var lruFilePath: String {
-        return directory.appending("/\(lruFileName).\(VideoCacheConfigFileExt)")
-    }
-    
-    func videoPath(for url: VURL) -> String {
-        return directory.appending("/\(cacheFileName(for: url))")
-    }
-    
-    func configurationPath(for url: VURL) -> String {
-        return directory.appending("/\(configFileName(for: url))")
-    }
-    
-    func contenInfoPath(for url: VURL) -> String {
-        return directory.appending("/\(contentFileName(for: url))")
-    }
-    
-    public func cachedUrl(for cacheKey: String) -> URL? {
-        return configuration(for: cacheKey)?.url.includeVideoCacheSchemeUrl
-    }
-    
-    func configuration(for url: VURL) -> VideoConfiguration {
-        if let config = NSKeyedUnarchiver.unarchiveObject(withFile: configurationPath(for: url)) as? VideoConfiguration {
-            return config
-        }
-        let newConfig = VideoConfiguration(url: url)
-        if let ext = url.originUrl.contentType {
-            newConfig.contentInfo.type = ext
-        }
-        newConfig.synchronize(by: self)
-        return newConfig
-    }
-    
-    func contentInfo(for url: VURL) -> ContentInfo? {
-        return NSKeyedUnarchiver.unarchiveObject(withFile: contenInfoPath(for: url)) as? ContentInfo
-    }
-    
     func checkUsage() {
-        while let size = try? calculateSize(), size > capacityLimit {
-            VLog(.info, "cache total size: \(size)")
-            if let oldestUrl = lru.oldestURL(without: downloadingUrls) {
-                try? clean(remote: oldestUrl.includeVideoCacheSchemeUrl, cacheKey: oldestUrl.key)
-            }
-        }
+        
+        guard let size = try? calculateSize() else { return }
+        
+        VLog(.info, "cache total size: \(size)")
+        
+        guard size > capacityLimit else { return }
+        
+        let oldestUrls = lru.oldestURL(maxLength: 10, without: downloadingUrls)
+        
+        guard oldestUrls.count > 0 else { return }
+        
+        oldestUrls.forEach { try? clean(url: $0, reserve: reserveRequired) }
+        
+        reserveRequired.toggle()
     }
 }
 
 extension VideoCacheManager {
     
-    func configurationPath(for cacheKey: String) -> String? {
-        guard let subpaths = FileM.subpaths(atPath: directory) else { return nil }
-        let filePrefix = cacheFileNamePrefix(for: cacheKey)
-        guard let configFileName = subpaths.first(where: { $0.contains(filePrefix) && $0.hasSuffix("." + VideoCacheConfigFileExt) }) else { return nil }
-        return directory.appending("/\(configFileName)")
-    }
-    
-    func configuration(for cacheKey: String) -> VideoConfiguration? {
-        guard let path = configurationPath(for: cacheKey) else { return nil }
-        return NSKeyedUnarchiver.unarchiveObject(withFile: path) as? VideoConfiguration
+    var paths: VideoCachePaths {
+        return VideoCachePaths(directory: directory, convertion: fileNameConvertion)
     }
 }
 
 extension VideoCacheManager {
     
-    func addDownloading(url: VURL) {
-        downloadingUrls[url.cacheKey] = url
+    func addDownloading(url: VideoURLType) {
+        downloadingUrls[url.key] = url
     }
     
-    func removeDownloading(url: VURL) {
-        downloadingUrls.removeValue(forKey: url.cacheKey)
+    func removeDownloading(url: VideoURLType) {
+        downloadingUrls.removeValue(forKey: url.key)
     }
     
-    private var downloadingUrls: [String: VURL] {
+    public var downloadingUrls: [String: VideoURLType] {
         get {
             lock.lock()
             defer { lock.unlock() }

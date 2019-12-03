@@ -16,6 +16,13 @@ extension Array where Element == VideoRange {
         return ranges
     }
     
+    func overlaps(_ other: Element) -> Bool {
+        for element in self {
+            if element.overlaps(other) { return true }
+        }
+        return false
+    }
+    
     func overlaps(_ other: Element) -> [Element] {
         return filter { $0.overlaps(other) }
     }

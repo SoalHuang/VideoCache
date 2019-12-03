@@ -10,7 +10,7 @@ import Foundation
 
 public protocol VideoLRUConfigurationType {
     
-    func oldestURL(without downloading: [String: VideoURLType]) -> VideoURLType?
+    func oldestURL(maxLength: Int, without downloading: [String: VideoURLType]) -> [VideoURLType]
 }
 
 extension VideoLRUConfiguration: VideoLRUConfigurationType {
@@ -26,15 +26,21 @@ extension VideoLRUConfiguration: VideoLRUConfigurationType {
      result sort:   [C(5), E(9), D(10), A(11), B(14), F(14)]
      oldest:        C(5)
      */
-    func oldestURL(without downloading: [String: VideoURLType]) -> VideoURLType? {
+    func oldestURL(maxLength: Int = 1, without downloading: [String: VideoURLType]) -> [VideoURLType] {
+        
         lock.lock()
         defer { lock.unlock() }
+        
         let urls = contentMap.filter { downloading[$0.key] == nil }.values
+        
         VLog(.info, "urls: \(urls)")
-        guard urls.count > 1 else { return urls.first?.url }
+        
+        guard urls.count > maxLength else { return urls.compactMap { $0.url} }
+        
         urls.sorted { $0.time < $1.time }.enumerated().forEach { $0.element.weight += ($0.offset + 1) * timeWeight }
         urls.sorted { $0.count < $1.count }.enumerated().forEach { $0.element.weight += ($0.offset + 1) * useWeight }
-        return urls.sorted(by: { $0.weight < $1.weight }).first?.url
+        
+        return urls.sorted(by: { $0.weight < $1.weight }).prefix(maxLength).compactMap { $0.url }
     }
 }
 
@@ -43,15 +49,15 @@ let lruFileName = "lru"
 extension VideoLRUConfiguration {
     
     @discardableResult
-    func use(url: VURL) -> Bool {
+    func use(url: VideoURLType) -> Bool {
         VLog(.info, "use url: \(url)")
         lock.lock()
         defer { lock.unlock() }
-        if let content = contentMap[url.cacheKey] {
+        if let content = contentMap[url.key] {
             content.use()
         } else {
             let content = LRUContent(url: url)
-            contentMap[url.cacheKey] = content
+            contentMap[url.key] = content
         }
         return synchronize()
     }
@@ -134,8 +140,8 @@ class LRUContent: NSObject, NSCoding {
     
     let url: VURL
     
-    init(url: VURL) {
-        self.url = url
+    init(url: VideoURLType) {
+        self.url = VURL(cacheKey: url.key, originUrl: url.url)
         super.init()
     }
     

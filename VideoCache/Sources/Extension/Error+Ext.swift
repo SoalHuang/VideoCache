@@ -28,7 +28,7 @@ extension VideoCacheErrors {
         case .dataRequestNull:      return NSURLErrorUnknown
         case .notMedia:             return NSURLErrorResourceUnavailable
         case .fileHandleWriting:    return NSURLErrorCannotWriteToFile
-        case .cancelled:             return NSURLErrorCancelled
+        case .cancelled:            return NSURLErrorCancelled
         }
     }
     
@@ -52,6 +52,6 @@ extension VideoCacheErrors {
     func error(_ msg: String? = nil) -> Error {
         guard let `msg` = msg else { return error }
         return NSError(domain: error_domain, code: code, userInfo: [NSURLErrorFailingURLErrorKey : message,
-                                                              NSLocalizedDescriptionKey: msg])
+                                                                    NSLocalizedDescriptionKey: msg])
     }
 }

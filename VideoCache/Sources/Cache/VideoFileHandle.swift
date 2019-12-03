@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-private let PacketLimit: Int64 = Int64(1).MB
+internal let PacketLimit: Int64 = Int64(1).MB
 
 protocol VideoFileHandleType {
     
@@ -34,13 +34,15 @@ extension VideoFileHandleType {
 
 class VideoFileHandle {
     
-    let manager: VideoCacheManager
+    let url: VideoURLType
     
-    let url: VURL
+    let paths: VideoCachePaths
+    
+    let cacheRanges: [VideoRange]
     
     let filePath: String
     
-    let limitRange: VideoRange
+    let configuration: VideoConfiguration
     
     deinit {
         do {
@@ -52,24 +54,24 @@ class VideoFileHandle {
         NotificationCenter.default.removeObserver(self, name: UIApplication.didEnterBackgroundNotification, object: nil)
     }
     
-    init(manager: VideoCacheManager, url: VURL, cacheLimit range: VideoRange) {
+    init(paths: VideoCachePaths, url: VideoURLType, cacheRanges: [VideoRange]) {
         
-        self.manager = manager
+        self.paths = paths
         self.url = url
-        self.limitRange = range
+        self.cacheRanges = cacheRanges
         
-        filePath = manager.videoPath(for: url)
+        filePath = paths.videoPath(for: url)
+        
+        VLog(.info, "Video path: \(filePath)")
         
         if !FileM.fileExists(atPath: filePath) {
             FileM.createFile(atPath: filePath, contents: nil, attributes: nil)
         }
         
-        checkAlreadyOverCache()
+        configuration = paths.configuration(for: url)
         
         NotificationCenter.default.addObserver(self, selector: #selector(applicationDidEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
     }
-    
-    lazy var configuration: VideoConfiguration = manager.configuration(for: url)
     
     private lazy var readHandle = FileHandle(forReadingAtPath: filePath)
     private lazy var writeHandle = FileHandle(forWritingAtPath: filePath)
@@ -86,29 +88,23 @@ extension VideoFileHandle {
     static let didSynchronizeNotification: NSNotification.Name = NSNotification.Name("VideoFileHandle.didSynchronizeNotification")
 }
 
-extension VideoFileHandle {
-    
-    private func checkAlreadyOverCache() {
-        guard let downloadedContentInfo = manager.contentInfo(for: url) else { return }
-        contentInfo = downloadedContentInfo
-    }
-}
-
 extension VideoFileHandle: VideoFileHandleType {
     
     var contentInfo: ContentInfo {
         get { return configuration.contentInfo }
         set {
             configuration.contentInfo = newValue
-            configuration.synchronize(by: manager)
+            configuration.synchronize(to: paths.configurationPath(for: url))
         }
     }
     
     func actions(for range: VideoRange) -> [Action] {
-        var actions: [Action] = []
-        guard range.isValid else { return actions }
+        
+        guard range.isValid else { return [] }
         
         let localRanges = configuration.overlaps(range).compactMap { $0.clamped(to: range) }.split(limit: PacketLimit).filter { $0.isValid }
+        
+        var actions: [Action] = []
         
         let localActions: [Action] = localRanges.compactMap { .local($0) }
         actions.append(contentsOf: localActions)
@@ -125,6 +121,7 @@ extension VideoFileHandle: VideoFileHandleType {
     }
     
     func readData(for range: VideoRange) throws -> Data {
+        
         lock.lock()
         defer { lock.unlock() }
         
@@ -139,7 +136,7 @@ extension VideoFileHandle: VideoFileHandleType {
         
         guard let handle = writeHandle else { return }
         
-        guard limitRange.overlaps(range) else { return }
+        guard cacheRanges.overlaps(range) else { return }
         
         isWriting = true
         
@@ -161,7 +158,7 @@ extension VideoFileHandle: VideoFileHandleType {
         
         try handle.throwError_synchronizeFile()
         
-        let configSyncResult = configuration.synchronize(by: manager)
+        let configSyncResult = configuration.synchronize(to: paths.configurationPath(for: url))
         
         if notify {
             NotificationCenter.default.post(name: VideoFileHandle.didSynchronizeNotification,

@@ -9,24 +9,18 @@
 import Foundation
 import AVFoundation
 
-fileprivate struct DownloadQueue {
-    
-    static let shared = DownloadQueue()
-    
-    let queue: OperationQueue = OperationQueue()
-    
-    init() {
-        queue.name = "com.video.cache.download.queue"
-    }
-}
-
 protocol VideoDownloaderType: NSObjectProtocol {
     
     var delegate: VideoDownloaderDelegate? { get set }
     
-    var url: VURL { get }
+    var url: VideoURLType { get }
     
     var loadingRequest: AVAssetResourceLoadingRequest { get }
+    
+    var id: Int { get }
+    
+    var task: URLSessionDataTask? { get }
+    var dataReceiver: URLSessionDataDelegate? { get }
     
     func finish()
     func cancel()
@@ -35,11 +29,16 @@ protocol VideoDownloaderType: NSObjectProtocol {
 
 protocol VideoDownloaderDelegate: NSObjectProtocol {
     
+    func downloaderAllowWriteData(_ downloader: VideoDownloader) -> Bool
     func downloaderFinish(_ downloader: VideoDownloader)
     func downloader(_ downloader: VideoDownloader, finishWith error: Error?)
 }
 
 extension VideoDownloader: VideoDownloaderType {
+    
+    var dataReceiver: URLSessionDataDelegate? {
+        return dataDelegate
+    }
     
     func finish() {
         VLog(.info, "downloader id: \(id), finish")
@@ -49,19 +48,21 @@ extension VideoDownloader: VideoDownloaderType {
             loadingRequest.finishLoading(with: VideoCacheErrors.cancelled.error)
         }
         dataDelegate?.delegate = nil
-        session?.invalidateAndCancel()
         dataDelegate = nil
-        session = nil
+        if task?.state ~= .running || task?.state ~= .suspended {
+            task?.cancel()
+        }
         isCancelled = true
     }
     
     func cancel() {
         VLog(.info, "downloader id: \(id), cancelled")
         NSObject.cancelPreviousPerformRequests(withTarget: self)
+        if task?.state ~= .running || task?.state ~= .suspended {
+            task?.cancel()
+        }
         dataDelegate?.delegate = nil
-        session?.invalidateAndCancel()
         dataDelegate = nil
-        session = nil
         isCancelled = true
     }
     
@@ -75,7 +76,7 @@ extension VideoDownloader: VideoDownloaderType {
         loadingRequest.contentInformationRequest?.update(contentInfo: fileHandle.contentInfo)
         
         if fileHandle.configuration.contentInfo.totalLength > 0 {
-            fileHandle.configuration.synchronize(by: manager)
+            fileHandle.configuration.synchronize(to: paths.configurationPath(for: url))
         }
         //        else if dataRequest.requestsAllDataToEndOfResource {
         //            toEnd = true
@@ -107,9 +108,9 @@ class VideoDownloader: NSObject {
     
     weak var delegate: VideoDownloaderDelegate?
     
-    let manager: VideoCacheManager
+    let paths: VideoCachePaths
     
-    let url: VURL
+    let url: VideoURLType
     
     let loadingRequest: AVAssetResourceLoadingRequest
     
@@ -118,31 +119,33 @@ class VideoDownloader: NSObject {
     deinit {
         VLog(.info, "downloader id: \(id), VideoDownloader deinit\n")
         NSObject.cancelPreviousPerformRequests(withTarget: self)
-        session?.invalidateAndCancel()
+        if task?.state ~= .running || task?.state ~= .suspended {
+            task?.cancel()
+        }
+        task = nil
         dataDelegate?.delegate = nil
-        isCancelled = true
         delegate = nil
     }
     
-    init(manager: VideoCacheManager, url: VURL, loadingRequest: AVAssetResourceLoadingRequest, fileHandle: VideoFileHandle) {
-        self.manager = manager
+    init(paths: VideoCachePaths, session: URLSession?, url: VideoURLType, loadingRequest: AVAssetResourceLoadingRequest, fileHandle: VideoFileHandle) {
+        self.paths = paths
+        self.session = session
         self.url = url
         self.loadingRequest = loadingRequest
         self.fileHandle = fileHandle
         super.init()
         dataDelegate = DownloaderSessionDelegate(delegate: self)
-        session = URLSession(configuration: .default, delegate: dataDelegate, delegateQueue: DownloadQueue.shared.queue)
     }
     
-    private let id: Int = accId
+    let id: Int = accId
     
     private var actions: [Action] = []
     
-    private var dataDelegate: DownloaderSessionDelegate?
+    internal private(set) var dataDelegate: DownloaderSessionDelegateType?
     
-    private var session: URLSession?
+    internal private(set) weak var session: URLSession?
     
-    private var task: URLSessionDataTask?
+    internal private(set) var task: URLSessionDataTask?
     
     private var toEnd: Bool = false
     
@@ -205,7 +208,11 @@ extension VideoDownloader {
     
     func receivedLocal(data: Data) {
         loadingRequest.dataRequest?.respond(with: data)
-        perform(#selector(actionLoop), with: nil, afterDelay: 0.1)
+        if data.count < PacketLimit {
+            actionLoop()
+        } else {
+            perform(#selector(actionLoop), with: nil, afterDelay: 0.1)
+        }
     }
     
     func finishLoading(error: Error?) {
@@ -270,7 +277,9 @@ extension VideoDownloader {
     }
     
     func write(data: Data) {
-        guard manager.allowWrite else { return }
+        
+        guard let allow = delegate?.downloaderAllowWriteData(self), allow else { return }
+        
         let range = VideoRange(writeOffset, writeOffset + Int64(data.count))
         VLog(.data, "downloader id: \(id), write data range: (\(range)) length: \(range.length)")
         do {
@@ -311,14 +320,6 @@ private class DownloaderSessionDelegate: NSObject, DownloaderSessionDelegateType
     init(delegate: DownloaderSessionDelegateDelegate?) {
         super.init()
         self.delegate = delegate
-    }
-    
-    func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        if let serverTrust = challenge.protectionSpace.serverTrust {
-            completionHandler(.useCredential, URLCredential(trust: serverTrust))
-        } else {
-            completionHandler(.useCredential, nil)
-        }
     }
     
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {

@@ -10,13 +10,18 @@ VideoCache is an AVPlayerItem Cache library written in Swift.
 import VideoCache
 
 // setup
-VideoCacheManager.default.logLevel = .none
+VideoCacheManager.logLevel = .error
 VideoCacheManager.default.capacityLimit = Int64(1).GB
 .
 .
 .
-// play
+// cache all
 let playerItem = AVPlayerItem(remote: url, cacheKey: <#special key for this media or nil#>)
+let player = AVPlayer(playerItem: playerItem)
+.
+.
+// cache 0~1024, 2048~4096
+let playerItem = AVPlayerItem(remote: url, cacheKey: <#special key for this media or nil#>, cacheRanges: [0...1024, 2048...4096])
 let player = AVPlayer(playerItem: playerItem)
 ```
 

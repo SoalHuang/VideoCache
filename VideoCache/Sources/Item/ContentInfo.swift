@@ -8,6 +8,15 @@
 
 import Foundation
 
+public protocol ContentInfoType: NSObjectProtocol {
+    
+    var type: String { get }
+    var byteRangeAccessSupported: Bool { get }
+    var totalLength: Int64 { get }
+}
+
+extension ContentInfo: ContentInfoType { }
+
 class ContentInfo: NSObject, NSCoding {
     
     var type: String = "application/octet-stream"
