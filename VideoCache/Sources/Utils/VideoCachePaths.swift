@@ -25,7 +25,7 @@ extension VideoCachePaths {
         return convertion?(url.key) ?? url.key
     }
     
-    func cacheFileNamePrefix(for cacheKey: String) -> String {
+    func cacheFileNamePrefix(for cacheKey: VideoCacheKeyType) -> String {
         return convertion?(cacheKey) ?? cacheKey
     }
     
@@ -41,7 +41,7 @@ extension VideoCachePaths {
         return url.key.appending(".data")
     }
     
-    func contentFileName(for cacheKey: String) -> String {
+    func contentFileName(for cacheKey: VideoCacheKeyType) -> String {
         return cacheKey.appending(".data")
     }
 }
@@ -64,7 +64,7 @@ extension VideoCachePaths {
         return directory.appending("/\(contentFileName(for: url))")
     }
     
-    public func cachedUrl(for cacheKey: String) -> URL? {
+    public func cachedUrl(for cacheKey: VideoCacheKeyType) -> URL? {
         return configuration(for: cacheKey)?.url.includeVideoCacheSchemeUrl
     }
     
@@ -108,14 +108,14 @@ extension VideoCachePaths {
 
 extension VideoCachePaths {
     
-    func configurationPath(for cacheKey: String) -> String? {
+    func configurationPath(for cacheKey: VideoCacheKeyType) -> String? {
         guard let subpaths = FileM.subpaths(atPath: directory) else { return nil }
         let filePrefix = cacheFileNamePrefix(for: cacheKey)
         guard let configFileName = subpaths.first(where: { $0.contains(filePrefix) && $0.hasSuffix("." + VideoCacheConfigFileExt) }) else { return nil }
         return directory.appending("/\(configFileName)")
     }
     
-    func configuration(for cacheKey: String) -> VideoConfigurationType? {
+    func configuration(for cacheKey: VideoCacheKeyType) -> VideoConfigurationType? {
         guard let path = configurationPath(for: cacheKey) else { return nil }
         return NSKeyedUnarchiver.unarchiveObject(withFile: path) as? VideoConfigurationType
     }

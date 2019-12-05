@@ -59,22 +59,12 @@ public class VideoCacheManager: NSObject {
         }
     }
     
-    public var lruConfig: VideoLRUConfigurationType {
-        return lru
-    }
-    
     private var allowWrite_: BoolValues = .default(true)
     
     /// default none
     public static var logLevel: VideoCacheLogLevel {
         get { return videoCacheLogLevel }
         set { videoCacheLogLevel = newValue }
-    }
-    
-    /// time default 2, use default 1
-    public func setWeight(time: Int, use: Int) {
-        lru.timeWeight = time
-        lru.useWeight = use
     }
     
     deinit {
@@ -109,11 +99,16 @@ public class VideoCacheManager: NSObject {
     
     private var lastCheckTimeInterval: TimeInterval = Date().timeIntervalSince1970
     
-    private var downloadingUrls_: [String: VideoURLType] = [:]
+    private var downloadingUrls_: [VideoCacheKeyType: VideoURLType] = [:]
     
     private let lock = NSLock()
     
     private var reserveRequired = true
+}
+
+extension VideoCacheManager {
+    
+    public var lruConfig: VideoLRUConfigurationType { return lru }
 }
 
 extension VideoCacheManager {
@@ -241,7 +236,7 @@ extension VideoCacheManager {
         
         lru.deleteAll(without: urls)
         
-        var downloadingURLs: [String: VideoURLType] = [:]
+        var downloadingURLs: [VideoCacheKeyType: VideoURLType] = [:]
         urls.forEach {
             downloadingURLs[paths.cacheFileName(for: $0.value)] = $0.value
             downloadingURLs[paths.configFileName(for: $0.value)] = $0.value
@@ -258,8 +253,8 @@ extension VideoCacheManager {
 
 extension VideoCacheManager {
     
-    func use(url: VideoURLType) {
-        lru.use(url: url)
+    func visit(url: VideoURLType) {
+        lru.visit(url: url)
     }
     
     func checkUsage() {
@@ -297,7 +292,7 @@ extension VideoCacheManager {
         downloadingUrls.removeValue(forKey: url.key)
     }
     
-    public var downloadingUrls: [String: VideoURLType] {
+    public var downloadingUrls: [VideoCacheKeyType: VideoURLType] {
         get {
             lock.lock()
             defer { lock.unlock() }

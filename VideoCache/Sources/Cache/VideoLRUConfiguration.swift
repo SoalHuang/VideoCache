@@ -10,46 +10,34 @@ import Foundation
 
 public protocol VideoLRUConfigurationType {
     
-    func oldestURL(maxLength: Int, without downloading: [String: VideoURLType]) -> [VideoURLType]
+    func update(visitTimes timesWeigth: Int, accessTime timeWeight: Int)
+    
+    @discardableResult
+    func visit(url: VideoURLType) -> Bool
+    
+    @discardableResult
+    func delete(url: VideoURLType) -> Bool
+    
+    @discardableResult
+    func deleteAll(without downloading: [String: VideoURLType]) -> Bool
+    
+    @discardableResult
+    func synchronize() -> Bool
+    
+    func oldestURL(maxLength: Int, without downloading: [VideoCacheKeyType: VideoURLType]) -> [VideoURLType]
 }
 
 extension VideoLRUConfiguration: VideoLRUConfigurationType {
     
-    /*
-     time weight is 2, use weight is 1,
-     time sort:     [A, B, C, D, E, F]
-     time weight:   [A(1), B(2), C(3), D(4), E(5), F(6)]
-     use sort:      [C, E, D, F, A, B]
-     use weight:    [C(2), E(4), D(6), F(8), A(10), B(12)]
-     combine:       [A(1 + 10), B(2 + 12), C(3 + 2), D(4 + 6), E(5 + 4), F(6 + 8)]
-     result:        [A(11), B(14), C(5), D(10), E(9), F(14)]
-     result sort:   [C(5), E(9), D(10), A(11), B(14), F(14)]
-     oldest:        C(5)
-     */
-    func oldestURL(maxLength: Int = 1, without downloading: [String: VideoURLType]) -> [VideoURLType] {
-        
-        lock.lock()
-        defer { lock.unlock() }
-        
-        let urls = contentMap.filter { downloading[$0.key] == nil }.values
-        
-        VLog(.info, "urls: \(urls)")
-        
-        guard urls.count > maxLength else { return urls.compactMap { $0.url} }
-        
-        urls.sorted { $0.time < $1.time }.enumerated().forEach { $0.element.weight += ($0.offset + 1) * timeWeight }
-        urls.sorted { $0.count < $1.count }.enumerated().forEach { $0.element.weight += ($0.offset + 1) * useWeight }
-        
-        return urls.sorted(by: { $0.weight < $1.weight }).prefix(maxLength).compactMap { $0.url }
+    /// visitTimes timesWeigth default 1, accessTime timeWeight default 2
+    func update(visitTimes timesWeigth: Int, accessTime timeWeight: Int) {
+        self.useWeight = timesWeigth
+        self.timeWeight = timeWeight
+        synchronize()
     }
-}
-
-let lruFileName = "lru"
-
-extension VideoLRUConfiguration {
     
     @discardableResult
-    func use(url: VideoURLType) -> Bool {
+    func visit(url: VideoURLType) -> Bool {
         VLog(.info, "use url: \(url)")
         lock.lock()
         defer { lock.unlock() }
@@ -72,7 +60,7 @@ extension VideoLRUConfiguration {
     }
     
     @discardableResult
-    func deleteAll(without downloading: [String: VideoURLType]) -> Bool {
+    func deleteAll(without downloading: [VideoCacheKeyType: VideoURLType]) -> Bool {
         lock.lock()
         defer { lock.unlock() }
         contentMap = contentMap.filter { downloading[$0.key] != nil }
@@ -84,7 +72,36 @@ extension VideoLRUConfiguration {
         guard let path = filePath else { return false }
         return NSKeyedArchiver.archiveRootObject(self, toFile: path)
     }
+    
+    // If accessTime weight is 2, visitTimes weight is 1
+    // accessTime sorted:   [A, B, C, D, E, F]
+    // accessTime weight:   [A(1), B(2), C(3), D(4), E(5), F(6)]
+    // visitTimes sorted:   [C, E, D, F, A, B]
+    // visitTimes weight:   [C(2), E(4), D(6), F(8), A(10), B(12)]
+    // combine:             [A(1 + 10), B(2 + 12), C(3 + 2), D(4 + 6), E(5 + 4), F(6 + 8)]
+    // result:              [A(11), B(14), C(5), D(10), E(9), F(14)]
+    // result sorted:       [C(5), E(9), D(10), A(11), B(14), F(14)]
+    // oldest:              C(5)
+    
+    func oldestURL(maxLength: Int = 1, without downloading: [VideoCacheKeyType: VideoURLType]) -> [VideoURLType] {
+        
+        lock.lock()
+        defer { lock.unlock() }
+        
+        let urls = contentMap.filter { downloading[$0.key] == nil }.values
+        
+        VLog(.info, "urls: \(urls)")
+        
+        guard urls.count > maxLength else { return urls.compactMap { $0.url} }
+        
+        urls.sorted { $0.time < $1.time }.enumerated().forEach { $0.element.weight += ($0.offset + 1) * timeWeight }
+        urls.sorted { $0.count < $1.count }.enumerated().forEach { $0.element.weight += ($0.offset + 1) * useWeight }
+        
+        return urls.sorted(by: { $0.weight < $1.weight }).prefix(maxLength).compactMap { $0.url }
+    }
 }
+
+let lruFileName = "lru"
 
 class VideoLRUConfiguration: NSObject, NSCoding {
     
@@ -93,7 +110,7 @@ class VideoLRUConfiguration: NSObject, NSCoding {
     
     var filePath: String?
     
-    private var contentMap: [String: LRUContent] = [:]
+    private var contentMap: [VideoCacheKeyType: LRUContent] = [:]
     
     static func read(from filePath: String) -> VideoLRUConfiguration? {
         let config = NSKeyedUnarchiver.unarchiveObject(withFile: filePath) as? VideoLRUConfiguration
@@ -105,7 +122,7 @@ class VideoLRUConfiguration: NSObject, NSCoding {
         super.init()
         timeWeight = aDecoder.decodeInteger(forKey: "timeWeight")
         useWeight = aDecoder.decodeInteger(forKey: "useWeight")
-        contentMap = (aDecoder.decodeObject(forKey: "map") as? [String: LRUContent]) ?? [:]
+        contentMap = (aDecoder.decodeObject(forKey: "map") as? [VideoCacheKeyType: LRUContent]) ?? [:]
     }
     
     func encode(with aCoder: NSCoder) {

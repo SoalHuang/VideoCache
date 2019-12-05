@@ -352,11 +352,11 @@ private class DownloaderSessionDelegate: NSObject, DownloaderSessionDelegateType
         
         let chunkRange = NSRange(location: bufferData.startIndex, length: length)
         
-        VLog(.info, "task: buffer data count: \(bufferCount), subdata: \(chunkRange)")
+        VLog(.request, "task: buffer data count: \(bufferCount), subdata: \(chunkRange)")
         
         let chunkData = bufferData.subdata(with: chunkRange)
         
-        VLog(.info, "task: buffer data remove subrange: \(chunkRange)")
+        VLog(.request, "task: buffer data remove subrange: \(chunkRange)")
         
         bufferData.replaceBytes(in: chunkRange, withBytes: nil, length: 0)
         

@@ -8,9 +8,11 @@
 
 import UIKit
 
+public typealias VideoCacheKeyType = String
+
 public protocol VideoURLType {
     
-    var key: String { get }
+    var key: VideoCacheKeyType { get }
     var url: URL { get }
     var includeVideoCacheSchemeUrl: URL { get }
 }
@@ -19,7 +21,7 @@ let VideoCacheConfigFileExt = "cfg"
 
 extension VURL: VideoURLType {
     
-    public var key: String {
+    public var key: VideoCacheKeyType {
         return cacheKey
     }
     
@@ -34,7 +36,7 @@ extension VURL: VideoURLType {
 
 class VURL: NSObject, NSCoding {
     
-    var cacheKey: String
+    var cacheKey: VideoCacheKeyType
     
     var originUrl: URL
     
@@ -49,7 +51,7 @@ class VURL: NSObject, NSCoding {
         aCoder.encode(originUrl.absoluteString, forKey: "url")
     }
     
-    init(cacheKey: String, originUrl: URL) {
+    init(cacheKey: VideoCacheKeyType, originUrl: URL) {
         self.cacheKey = cacheKey
         self.originUrl = originUrl
         super.init()
