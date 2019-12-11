@@ -115,8 +115,8 @@ class VideoDownloader: NSObject {
     let fileHandle: VideoFileHandle
     
     deinit {
-        NSObject.cancelPreviousPerformRequests(withTarget: self)
         VLog(.info, "downloader id: \(id), VideoDownloader deinit\n")
+        NSObject.cancelPreviousPerformRequests(withTarget: self)
     }
     
     init(paths: VideoCachePaths, session: URLSession?, url: VideoURLType, loadingRequest: AVAssetResourceLoadingRequest, fileHandle: VideoFileHandle) {
@@ -235,11 +235,34 @@ extension VideoDownloader {
 extension VideoDownloader {
     
     func read(from range: VideoRange) {
+        
         VLog(.data, "downloader id: \(id), read data range: (\(range)) length: \(range.length)")
+        
         do {
+            
             let data = try fileHandle.readData(for: range)
+            
+            guard range.lowerBound > 0 else {
+                receivedLocal(data: data)
+                return
+            }
+            
+            guard data.count == range.length else {
+                VLog(.error, "read local data length is error, re-download range: \(range)")
+                download(for: range)
+                return
+            }
+            
+            guard data.checksum() else {
+                VLog(.error, "check sum is failure, re-download range: \(range)")
+                download(for: range)
+                return
+            }
+            
             receivedLocal(data: data)
+            
         } catch {
+            
             VLog(.error, "downloader id: \(id), read local data failure: \(error)")
             finishLoading(error: error)
         }
@@ -306,7 +329,7 @@ private class DownloaderSessionDelegate: NSObject, DownloaderSessionDelegateType
     private let lock = NSLock()
     
     deinit {
-        delegate = nil
+        VLog(.info, "DownloaderSessionDelegate deinit\n")
     }
     
     init(delegate: DownloaderSessionDelegateDelegate?) {

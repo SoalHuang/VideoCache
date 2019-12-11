@@ -26,7 +26,7 @@ typedef NS_ENUM(NSUInteger, FileHandleErrorCodes) {
     @try {
         return [self readDataOfLength: length];
     } @catch (NSException *exception) {
-        *error = [NSError errorWithDomain:FileHandleErrorDomain code:FileHandleErrorCodesRead userInfo:exception.userInfo];
+        *error = [NSError errorWithDomain: FileHandleErrorDomain code: FileHandleErrorCodesRead userInfo: exception.userInfo];
     } @finally {
         *error = nil;
     }
@@ -36,7 +36,7 @@ typedef NS_ENUM(NSUInteger, FileHandleErrorCodes) {
     @try {
         [self writeData:data];
     } @catch (NSException *exception) {
-        return [NSError errorWithDomain:FileHandleErrorDomain code:FileHandleErrorCodesWrite userInfo:exception.userInfo];
+        return [NSError errorWithDomain: FileHandleErrorDomain code: FileHandleErrorCodesWrite userInfo: exception.userInfo];
     } @finally {
         return nil;
     }
@@ -46,7 +46,7 @@ typedef NS_ENUM(NSUInteger, FileHandleErrorCodes) {
     @try {
         return [self seekToEndOfFile];
     } @catch (NSException *exception) {
-        *error = [NSError errorWithDomain:FileHandleErrorDomain code:FileHandleErrorCodesSeekToEnd userInfo:exception.userInfo];
+        *error = [NSError errorWithDomain: FileHandleErrorDomain code: FileHandleErrorCodesSeekToEnd userInfo: exception.userInfo];
     } @finally {
         *error = nil;
     }
@@ -56,7 +56,7 @@ typedef NS_ENUM(NSUInteger, FileHandleErrorCodes) {
     @try {
         [self seekToFileOffset:offset];
     } @catch (NSException *exception) {
-        return [NSError errorWithDomain:FileHandleErrorDomain code:FileHandleErrorCodesSeek userInfo:exception.userInfo];
+        return [NSError errorWithDomain: FileHandleErrorDomain code: FileHandleErrorCodesSeek userInfo: exception.userInfo];
     } @finally {
         return nil;
     }
@@ -66,7 +66,7 @@ typedef NS_ENUM(NSUInteger, FileHandleErrorCodes) {
     @try {
         [self truncateFileAtOffset:offset];
     } @catch (NSException *exception) {
-        return [NSError errorWithDomain:FileHandleErrorDomain code:FileHandleErrorCodesTruncate userInfo:exception.userInfo];
+        return [NSError errorWithDomain: FileHandleErrorDomain code: FileHandleErrorCodesTruncate userInfo: exception.userInfo];
     } @finally {
         return nil;
     }
@@ -76,7 +76,7 @@ typedef NS_ENUM(NSUInteger, FileHandleErrorCodes) {
     @try {
         [self synchronizeFile];
     } @catch (NSException *exception) {
-        return [NSError errorWithDomain:FileHandleErrorDomain code:FileHandleErrorCodesSynchronize userInfo:exception.userInfo];
+        return [NSError errorWithDomain: FileHandleErrorDomain code: FileHandleErrorCodesSynchronize userInfo: exception.userInfo];
     } @finally {
         return nil;
     }
@@ -86,7 +86,7 @@ typedef NS_ENUM(NSUInteger, FileHandleErrorCodes) {
     @try {
         [self closeFile];
     } @catch (NSException *exception) {
-        return [NSError errorWithDomain:FileHandleErrorDomain code:FileHandleErrorCodesClose userInfo:exception.userInfo];
+        return [NSError errorWithDomain: FileHandleErrorDomain code: FileHandleErrorCodesClose userInfo: exception.userInfo];
     } @finally {
         return nil;
     }

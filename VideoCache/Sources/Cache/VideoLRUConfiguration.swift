@@ -19,7 +19,7 @@ public protocol VideoLRUConfigurationType {
     func delete(url: VideoURLType) -> Bool
     
     @discardableResult
-    func deleteAll(without downloading: [String: VideoURLType]) -> Bool
+    func deleteAll(without downloading: [VideoCacheKeyType: VideoURLType]) -> Bool
     
     @discardableResult
     func synchronize() -> Bool

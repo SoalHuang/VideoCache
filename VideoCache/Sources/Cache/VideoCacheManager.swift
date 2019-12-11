@@ -214,10 +214,10 @@ extension VideoCacheManager {
         }
         
         do {
+            try FileM.removeItem(atPath: configPath)
             try fileHandle.throwError_truncateFile(atOffset: UInt64(reservedLength))
             try fileHandle.throwError_synchronizeFile()
             try fileHandle.throwError_closeFile()
-            try FileM.removeItem(atPath: configPath)
         } catch {
             try cleanAllClosure()
         }
@@ -267,13 +267,13 @@ extension VideoCacheManager {
         
         guard size > capacityLimit else { return }
         
-        let oldestUrls = lru.oldestURL(maxLength: 10, without: downloadingUrls)
+        let oldestUrls = lru.oldestURL(maxLength: 4, without: downloadingUrls)
         
         guard oldestUrls.count > 0 else { return }
         
         oldestUrls.forEach { try? clean(url: $0, reserve: reserveRequired) }
         
-        reserveRequired.toggle()
+//        reserveRequired.toggle()
     }
 }
 

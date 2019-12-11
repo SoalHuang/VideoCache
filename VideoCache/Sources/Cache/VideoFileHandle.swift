@@ -126,7 +126,8 @@ extension VideoFileHandle: VideoFileHandleType {
         defer { lock.unlock() }
         
         try readHandle?.throwError_seek(toFileOffset: UInt64(range.lowerBound))
-        return try readHandle?.throwError_readData(ofLength: UInt(range.length)) ?? Data()
+        let data = try readHandle?.throwError_readData(ofLength: UInt(range.length)) ?? Data()
+        return data
     }
     
     func writeData(data: Data, for range: VideoRange) throws {

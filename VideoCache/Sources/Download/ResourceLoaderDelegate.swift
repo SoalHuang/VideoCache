@@ -34,7 +34,8 @@ class VideoResourceLoaderDelegate: NSObject {
         self.url = url
         self.cacheRanges = cacheRanges
         super.init()
-        checkAlreadyOverCache()
+        manager.addDownloading(url: url)
+        checkConfigData()
     }
     
     func cancel() {
@@ -46,12 +47,31 @@ class VideoResourceLoaderDelegate: NSObject {
 
 extension VideoResourceLoaderDelegate {
     
-    private func checkAlreadyOverCache() {
-        
-        VLog(.info, "Check already over cahce file")
+    private func checkConfigData() {
         
         let `url` = self.url
         let paths = manager.paths
+        
+        let configuration = paths.configuration(for: url)
+        
+        if configuration.fragments.isEmpty {
+            checkAlreadyOverCache(url: url, paths: paths)
+            return
+        }
+        
+        let videoPath = paths.videoPath(for: url)
+        guard let videoAtt = try? FileM.attributesOfItem(atPath: videoPath) as NSDictionary else { return }
+        let videoFileSize = videoAtt.fileSize()
+        guard let maxRange = configuration.fragments.sorted(by: { $0.upperBound > $1.upperBound }).first else { return }
+        if videoFileSize != maxRange.upperBound {
+            configuration.reset(fragment: VideoRange(0, VideoRangeBounds(videoFileSize)))
+            configuration.synchronize(to: paths.configurationPath(for: url))
+        }
+    }
+    
+    private func checkAlreadyOverCache(url: VideoURLType, paths: VideoCachePaths) {
+        
+        VLog(.info, "Check already over cahce file")
         
         let configuration = paths.configuration(for: url)
         
@@ -121,7 +141,6 @@ extension VideoResourceLoaderDelegate: AVAssetResourceLoaderDelegate {
             loaders[resourceURL.absoluteString] = newLoader
             newLoader.add(loadingRequest: loadingRequest)
         }
-        manager.addDownloading(url: url)
         return true
     }
     

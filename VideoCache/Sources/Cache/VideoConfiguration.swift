@@ -20,6 +20,8 @@ protocol VideoConfigurationType: NSObjectProtocol {
     
     func overlaps(_ other: VideoRange) -> [VideoRange]
     
+    func reset(fragment: VideoRange)
+    
     func add(fragment: VideoRange)
     
     @discardableResult
@@ -84,6 +86,13 @@ extension VideoConfiguration: VideoConfigurationType {
         lock.lock()
         defer { lock.unlock() }
         return fragments.overlaps(range)
+    }
+    
+    func reset(fragment: VideoRange) {
+        VLog(.data, "reset fragment: \(fragment)")
+        lock.lock()
+        defer { lock.unlock() }
+        fragments = [fragment]
     }
     
     func add(fragment: VideoRange) {
