@@ -48,7 +48,6 @@ extension VideoDownloader: VideoDownloaderType {
             loadingRequest.finishLoading(with: VideoCacheErrors.cancelled.error)
         }
         dataDelegate?.delegate = nil
-        dataDelegate = nil
         if task?.state ~= .running || task?.state ~= .suspended {
             task?.cancel()
         }
@@ -62,7 +61,6 @@ extension VideoDownloader: VideoDownloaderType {
             task?.cancel()
         }
         dataDelegate?.delegate = nil
-        dataDelegate = nil
         isCancelled = true
     }
     
@@ -117,14 +115,8 @@ class VideoDownloader: NSObject {
     let fileHandle: VideoFileHandle
     
     deinit {
-        VLog(.info, "downloader id: \(id), VideoDownloader deinit\n")
         NSObject.cancelPreviousPerformRequests(withTarget: self)
-        if task?.state ~= .running || task?.state ~= .suspended {
-            task?.cancel()
-        }
-        task = nil
-        dataDelegate?.delegate = nil
-        delegate = nil
+        VLog(.info, "downloader id: \(id), VideoDownloader deinit\n")
     }
     
     init(paths: VideoCachePaths, session: URLSession?, url: VideoURLType, loadingRequest: AVAssetResourceLoadingRequest, fileHandle: VideoFileHandle) {

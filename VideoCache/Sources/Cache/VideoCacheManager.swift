@@ -226,6 +226,8 @@ extension VideoCacheManager {
     /// clean all cache
     public func cleanAll() throws {
         
+        reserveRequired = true
+        
         let urls = downloadingUrls
         
         guard urls.count > 0 else {
