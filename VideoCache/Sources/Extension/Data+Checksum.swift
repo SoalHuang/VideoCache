@@ -19,6 +19,10 @@ extension NSData {
     
     func checksum(split: VideoRangeBounds, vacuate: VideoRangeBounds? = nil) -> Bool {
         
+        if isEmpty {
+            return false
+        }
+        
         let totalRange = VideoRange(0, VideoRangeBounds(count))
         
         var splitRanges = totalRange.split(limit: split).filter { $0.isValid }
@@ -35,7 +39,9 @@ extension NSData {
             
             let data = subdata(with: r)
             
-            guard data.count == r.length else { return false }
+            guard data.count == r.length else {
+                return false
+            }
             
             let sum: VideoRangeBounds = data.reduce(0) { $0 + VideoRangeBounds($1) }
             
