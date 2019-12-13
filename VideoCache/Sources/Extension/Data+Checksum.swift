@@ -21,9 +21,13 @@ extension NSData {
         
         let totalRange = VideoRange(0, VideoRangeBounds(count))
         
-        let ranges = totalRange.split(limit: split)
-        let vac: VideoRangeBounds = vacuate ?? VideoRangeBounds(sqrt(Double(ranges.count)))
-        let results = ranges.enumerated().compactMap { VideoRangeBounds($0.offset) % vac == 0 ? $0.element : nil }
+        var splitRanges = totalRange.split(limit: split).filter { $0.isValid }
+        let vacuateCount: VideoRangeBounds = vacuate ?? VideoRangeBounds(sqrt(Double(splitRanges.count)))
+        
+        let results: [VideoRange] = (0..<vacuateCount).compactMap { _ in
+            let index = Int.random(in: splitRanges.indices)
+            return splitRanges.remove(at: index)
+        }
         
         for range in results {
             
@@ -31,11 +35,11 @@ extension NSData {
             
             let data = subdata(with: r)
             
-            guard data.count == r.length else {
-                return false
-            }
+            guard data.count == r.length else { return false }
             
             let sum: VideoRangeBounds = data.reduce(0) { $0 + VideoRangeBounds($1) }
+            
+            VLog(.data, "sub-range: \(r) checksum: \(sum) --> \(sum < r.length ? "invalid" : "valid")")
             
             if sum < r.length {
                 return false
