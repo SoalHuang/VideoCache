@@ -12,8 +12,8 @@
 		9C0842FD2226372200EB8F85 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9C0842FB2226372200EB8F85 /* Main.storyboard */; };
 		9C0842FF2226372300EB8F85 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9C0842FE2226372300EB8F85 /* Assets.xcassets */; };
 		9C0843022226372300EB8F85 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9C0843002226372300EB8F85 /* LaunchScreen.storyboard */; };
-		9CB878C7222639D100543226 /* VideoCache.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9CB878C6222639B900543226 /* VideoCache.framework */; };
-		9CB878C8222639D100543226 /* VideoCache.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 9CB878C6222639B900543226 /* VideoCache.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		9C9E4FB223D0122500007E6E /* VideoCache.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9CB878C6222639B900543226 /* VideoCache.framework */; };
+		9C9E4FB323D0122500007E6E /* VideoCache.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 9CB878C6222639B900543226 /* VideoCache.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -24,23 +24,16 @@
 			remoteGlobalIDString = 9C08420B222530D700EB8F85;
 			remoteInfo = VideoCache;
 		};
-		9CB878C9222639D100543226 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 9CB878C1222639B900543226 /* VideoCache.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 9C08420A222530D700EB8F85;
-			remoteInfo = VideoCache;
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		9C084314222637B100EB8F85 /* Embed Frameworks */ = {
+		9C9E4FB423D0122500007E6E /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				9CB878C8222639D100543226 /* VideoCache.framework in Embed Frameworks */,
+				9C9E4FB323D0122500007E6E /* VideoCache.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -63,7 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9CB878C7222639D100543226 /* VideoCache.framework in Frameworks */,
+				9C9E4FB223D0122500007E6E /* VideoCache.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -76,6 +69,7 @@
 				9CB878C1222639B900543226 /* VideoCache.xcodeproj */,
 				9C0842F62226372200EB8F85 /* VideoCacheDemo */,
 				9C0842F52226372200EB8F85 /* Products */,
+				9C9E4FB123D0122500007E6E /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -100,6 +94,13 @@
 			path = VideoCacheDemo;
 			sourceTree = "<group>";
 		};
+		9C9E4FB123D0122500007E6E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		9CB878C2222639B900543226 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -118,12 +119,11 @@
 				9C0842F02226372200EB8F85 /* Sources */,
 				9C0842F12226372200EB8F85 /* Frameworks */,
 				9C0842F22226372200EB8F85 /* Resources */,
-				9C084314222637B100EB8F85 /* Embed Frameworks */,
+				9C9E4FB423D0122500007E6E /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				9CB878CA222639D100543226 /* PBXTargetDependency */,
 			);
 			name = VideoCacheDemo;
 			productName = VideoCacheDemo;
@@ -204,14 +204,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		9CB878CA222639D100543226 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = VideoCache;
-			targetProxy = 9CB878C9222639D100543226 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		9C0842FB2226372200EB8F85 /* Main.storyboard */ = {
@@ -352,7 +344,6 @@
 		9C0843072226372300EB8F85 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = W395RC57B2;
@@ -371,7 +362,6 @@
 		9C0843082226372300EB8F85 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = W395RC57B2;

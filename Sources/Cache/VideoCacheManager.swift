@@ -29,7 +29,7 @@ let FileM = FileManager.default
 public class VideoCacheManager: NSObject {
     
     /// shared instance, directory default NSTemporaryDirectory/VideoCache
-    public static let `default` = VideoCacheManager(directory: NSTemporaryDirectory().appending("/VideoCache"))
+    public static let `default` = VideoCacheManager(directory: NSTemporaryDirectory().appending("VideoCache"))
     
     /// default NSTemporaryDirectory/VideoCache/
     public let directory: String
@@ -224,7 +224,13 @@ extension VideoCacheManager {
     }
     
     /// clean all cache
-    public func cleanAll() throws {
+    public func cleanAll(_ force: Bool = false) throws {
+        
+        if force {
+            try FileM.removeItem(atPath: directory)
+            createCacheDirectory()
+            return
+        }
         
         reserveRequired = true
         

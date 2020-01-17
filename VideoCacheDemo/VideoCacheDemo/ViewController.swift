@@ -25,7 +25,7 @@ class ViewController: UIViewController {
         
         let savedVersion = UserDefaults.standard.integer(forKey: VideoCacheVersionKey)
         if savedVersion < version {
-            try? VideoCacheManager.default.cleanAll()
+            try? VideoCacheManager.default.cleanAll(true)
             UserDefaults.standard.set(version, forKey: VideoCacheVersionKey)
             UserDefaults.standard.synchronize()
         }
@@ -39,8 +39,8 @@ class ViewController: UIViewController {
         addChild(playerViewController)
         view.addSubview(playerViewController.view)
         
-        let url = URL(string: "<#Video or Audio URL#>")!
-        let cacheItem = AVPlayerItem(remote: url, cacheKey: <#Store Key or nil#>)
+        let url = URL(string: "https://vod.putaocdn.com/IMG_4449.MOV?auth_key=1579155925-3012-0-36f3aa6455033a9b078ad93eef7dcdea")!
+        let cacheItem = AVPlayerItem(remote: url, cacheKey: "1111")
         
         playerViewController.player = AVPlayer(playerItem: cacheItem)
         playerViewController.player?.play()

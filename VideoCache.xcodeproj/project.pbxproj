@@ -86,7 +86,7 @@
 		9C084201222530D700EB8F85 = {
 			isa = PBXGroup;
 			children = (
-				9C08420D222530D700EB8F85 /* VideoCache */,
+				9C08420D222530D700EB8F85 /* Sources */,
 				9C08420C222530D700EB8F85 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -99,20 +99,12 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		9C08420D222530D700EB8F85 /* VideoCache */ = {
+		9C08420D222530D700EB8F85 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
 				9C08420E222530D700EB8F85 /* VideoCache.h */,
 				9C0842802226324200EB8F85 /* AVPlayerItem+Cache.swift */,
 				9C08420F222530D700EB8F85 /* Info.plist */,
-				9C08427F2226324200EB8F85 /* Sources */,
-			);
-			path = VideoCache;
-			sourceTree = "<group>";
-		};
-		9C08427F2226324200EB8F85 /* Sources */ = {
-			isa = PBXGroup;
-			children = (
 				9C08428A2226324200EB8F85 /* Cache */,
 				9C08428E2226324200EB8F85 /* Download */,
 				9C0842922226324200EB8F85 /* Item */,
@@ -431,7 +423,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				INFOPLIST_FILE = VideoCache/Info.plist;
+				INFOPLIST_FILE = Sources/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -439,7 +431,7 @@
 					"@loader_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.1.2;
-				PRODUCT_BUNDLE_IDENTIFIER = com.putao.VideoCache;
+				PRODUCT_BUNDLE_IDENTIFIER = com.putao.videocache;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -459,7 +451,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				INFOPLIST_FILE = VideoCache/Info.plist;
+				INFOPLIST_FILE = Sources/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -467,7 +459,7 @@
 					"@loader_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.1.2;
-				PRODUCT_BUNDLE_IDENTIFIER = com.putao.VideoCache;
+				PRODUCT_BUNDLE_IDENTIFIER = com.putao.videocache;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
