@@ -8,7 +8,7 @@
 
 #import "NSFileHandle+Ext.h"
 
-static NSString * const FileHandleErrorDomain = @"com.putao.video.cache.filehandle.error.domain";
+static NSString * const FileHandleErrorDomain = @"com.sd.video.cache.filehandle.error.domain";
 
 typedef NS_ENUM(NSUInteger, FileHandleErrorCodes) {
     FileHandleErrorCodesRead        = 99920,
